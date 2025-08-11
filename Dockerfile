@@ -6,4 +6,4 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY app /app
 EXPOSE 8080
 ENV COLOR=#0ea5e9 REGION=blue VERSION=v1.0.0
-CMD ["python", "app.py"]
+CMD ["gunicorn", "-w", "2", "-k", "gthread", "--threads", "4", "-b", "0.0.0.0:8080", "app:app"]
