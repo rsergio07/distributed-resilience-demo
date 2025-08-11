@@ -1,71 +1,163 @@
 # **Distributed Resilience Demo (Kubernetes)**
 
-Demo for the talk **"Distributed Resilience: How to design systems that don't fail (even when everything else does)"**.
+Demo for the talk **"Distributed Resilience: How to Design Systems That Don't Fail (Even When Everything Else Does)"**.
 
-## **Objective**
+This repository showcases **resilience patterns**, **cost-aware design**, and **disaster recovery strategies** using Kubernetes.  
+It is structured so anyone can **fork or clone** the repo, deploy the workloads locally, and reproduce the demo environment step-by-step.
 
-Demonstrate resilience and *cost-aware design* using:
+---
 
-* Blue/Green switching via Kubernetes `Service` selector
-* Horizontal Pod Autoscaler (HPA) per deployment
-* Failure simulation (deleting pods)
-* Simple cost estimation (FinOps mindset)
+## **About This Demo**
+
+This project is a hands-on example of:
+
+- **Blue/Green deployment switching** using Kubernetes `Service` selectors.
+- **Horizontal Pod Autoscaler (HPA)** to scale workloads up/down based on CPU usage.
+- **Pod failure simulation** to demonstrate recovery and failover strategies.
+- **FinOps mindset** with a cost estimation script (`cost/calc_costs.py`).
+- **Offline-ready deployment** for conference/live demos without relying on internet access.
+
+While designed for **live presentations**, it is also a self-contained learning resource for Kubernetes users, SREs, DevOps engineers, and students.
+
+---
+
+## **Getting Started**
+
+You can either **fork** this repo to your own GitHub account or **clone** it locally:
+
+```bash
+# Clone directly
+git clone https://github.com/YOUR-USERNAME/distributed-resilience-demo.git
+
+# Or fork via GitHub UI, then:
+git clone https://github.com/YOUR-FORK/distributed-resilience-demo.git
+````
+
+---
 
 ## **Requirements**
 
-* Docker, `kubectl`, and Minikube
-* Python 3.11+
+* [Colima](https://github.com/abiosoft/colima) or Docker Desktop
+* [Minikube](https://minikube.sigs.k8s.io/docs/)
+* `kubectl`
+* Python **3.11+**
 * `curl`
 
-## **Quick Start**
+> 💡 This project has been tested with Colima (Docker runtime) on macOS, but should work on Linux and Windows (with WSL2) with minimal changes.
+
+---
+
+## **Deployment Options**
+
+### **Option 1: Online Mode**
+
+Uses internet access to pull required images.
 
 ```bash
-# 1) Start and deploy
+# Deploy
 ./scripts/deploy.sh
 
-# 2) Open the URL
+# Get the service URL
 minikube service web -n distributed-resilience --url
 
-# 3) Send load (trigger autoscaling)
+# Send load to trigger HPA
 ./scripts/load-test.sh
+```
 
-# 4) Simulate failure in 'blue' (pods deleted and recreated)
+---
+
+### **Option 2: Offline Mode (Recommended for Live Demos)**
+
+Prepare all required images locally:
+
+```bash
+# One-time image preparation
+./scripts/prepare-offline.sh
+```
+
+Deploy without internet access:
+
+```bash
+./scripts/deploy-offline.sh
+```
+
+---
+
+## **Suggested Terminal Setup for Monitoring**
+
+* **Terminal A:** Deployments and simulations
+* **Terminal B:** Watch scaling events
+
+  ```bash
+  kubectl -n distributed-resilience get hpa,pods -w
+  ```
+* **Terminal C:** CPU usage metrics
+
+  ```bash
+  kubectl -n distributed-resilience top pods
+  ```
+
+---
+
+## **Failure Simulation**
+
+Delete pods from the blue deployment and watch them recover:
+
+```bash
 ./scripts/simulate-failure.sh blue
+```
 
-# 5) Manually switch to 'green' (failover)
+Switch traffic to green manually:
+
+```bash
 ./scripts/switch.sh green
 ```
 
-> Tip: Watch `kubectl -n distributed-resilience get hpa,pods -w` in another terminal to monitor scaling in real-time.
+---
 
-## **Cost Management (illustrative)**
+## **Cost Simulation**
 
-Edit `cost/cost_assumptions.md` and run:
+Estimate monthly costs under different scaling policies:
 
 ```bash
-python cost/calc_costs.py
+python3 cost/calc_costs.py
 ```
 
-This will display different monthly cost scenarios:
+Scenarios:
 
-* Always-on Blue only
-* Always-on Blue+Green
+* Always-on Blue only (1 pod)
+* Always-on Blue+Green (2 pods)
 * Peak scaling with HPA
-* Scale-to-zero off-hours
+* Scale-to-zero during off-hours
 
-## **Extending to Public Cloud**
+Edit `cost/cost_assumptions.md` to adjust parameters.
 
-* Push the image to a container registry (GHCR, ECR, IBM Cloud Container Registry)
-* Deploy in 2+ regions (e.g., us-east / us-west) with the same `Service`/Ingress rules
-* Monitor costs with Kubecost, AWS Cost Explorer, or IBM Cloud Cost Estimator
-* Automate deployments with GitHub Actions
+---
 
 ## **Cleanup**
 
+Delete only the namespace:
+
 ```bash
 kubectl delete ns distributed-resilience
-# or
-minikube delete
 ```
+
+Full reset (removes Minikube cluster):
+
+```bash
+./scripts/cleanup.sh --cluster
+```
+
+---
+
+## **Contributing**
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+---
+
+## **License**
+
+This project is licensed under the MIT License – see the [LICENSE.md](LICENSE.md) file for details.
 
 ---
