@@ -1,56 +1,71 @@
+# **Distributed Resilience Demo (Kubernetes)**
 
-# Distributed Resilience Demo (Kubernetes)
+Demo for the talk **"Distributed Resilience: How to design systems that don't fail (even when everything else does)"**.
 
-Demo para charla **"Distributed Resilience: Cómo diseñar sistemas que no fallan (aunque todo lo demás sí)"**.
+## **Objective**
 
-## Objetivo
-Mostrar resiliencia y *cost-aware design* con:
-- Blue/Green conmutado vía `Service` selector
-- HPA (Horizontal Pod Autoscaler) por despliegue
-- Simulación de fallos (delete pods)
-- Estimaciones simples de costos (FinOps mindset)
+Demonstrate resilience and *cost-aware design* using:
 
-## Requisitos
-- macOS con Docker, kubectl, y minikube
-- Python 3.11+
-- `curl`
+* Blue/Green switching via Kubernetes `Service` selector
+* Horizontal Pod Autoscaler (HPA) per deployment
+* Failure simulation (deleting pods)
+* Simple cost estimation (FinOps mindset)
 
-## Pasos rápidos
+## **Requirements**
+
+* Docker, `kubectl`, and Minikube
+* Python 3.11+
+* `curl`
+
+## **Quick Start**
 
 ```bash
-# 1) Iniciar y desplegar
+# 1) Start and deploy
 ./scripts/deploy.sh
 
-# 2) Abrir la URL
+# 2) Open the URL
 minikube service web -n distributed-resilience --url
 
-# 3) Enviar carga (autoescalado)
+# 3) Send load (trigger autoscaling)
 ./scripts/load-test.sh
 
-# 4) Simular fallo en 'blue' (pods caen y se regeneran)
+# 4) Simulate failure in 'blue' (pods deleted and recreated)
 ./scripts/simulate-failure.sh blue
 
-# 5) Conmutar manualmente a 'green' (failover)
+# 5) Manually switch to 'green' (failover)
 ./scripts/switch.sh green
 ```
 
-> Consejo: observá `kubectl -n distributed-resilience get hpa,pods -w` en otra terminal.
+> Tip: Watch `kubectl -n distributed-resilience get hpa,pods -w` in another terminal to monitor scaling in real-time.
 
-## Cost Management (ilustrativo)
-Editá `cost/cost_assumptions.md` y ejecutá:
+## **Cost Management (illustrative)**
+
+Edit `cost/cost_assumptions.md` and run:
+
 ```bash
 python cost/calc_costs.py
 ```
 
-## Extensión a cloud público
-- Publicá la imagen en un registry (GHCR, ECR, IBM CR)
-- Desplegá en 2 regiones (us-east / us-west) con el mismo `Service`/Ingress
-- Observá costos con Kubecost o Cost Explorer
-- Automatizá con GitHub Actions
+This will display different monthly cost scenarios:
 
-## Limpieza
+* Always-on Blue only
+* Always-on Blue+Green
+* Peak scaling with HPA
+* Scale-to-zero off-hours
+
+## **Extending to Public Cloud**
+
+* Push the image to a container registry (GHCR, ECR, IBM Cloud Container Registry)
+* Deploy in 2+ regions (e.g., us-east / us-west) with the same `Service`/Ingress rules
+* Monitor costs with Kubecost, AWS Cost Explorer, or IBM Cloud Cost Estimator
+* Automate deployments with GitHub Actions
+
+## **Cleanup**
+
 ```bash
 kubectl delete ns distributed-resilience
-# o
+# or
 minikube delete
 ```
+
+---
