@@ -1,1 +1,4 @@
+# local images
 images/*.tar
+# macOS cruft
+.DS_Store
