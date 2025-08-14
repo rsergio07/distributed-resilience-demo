@@ -2,20 +2,15 @@
 
 **Design Kubernetes systems that withstand failure—even under extreme conditions.**
 
-This repository is a hands-on lab for building **production-grade resilience** in Kubernetes. It goes far beyond basic tutorials, guiding you through advanced patterns that enable intelligent, autonomous, and cost-aware infrastructure. Inspired by the talk *"Distributed Resilience: How to Design Systems That Don't Fail (Even When Everything Else Does),"* this project demonstrates how to build systems that recover gracefully, adapt intelligently, and operate efficiently under pressure.
+This repository is a complete, hands-on lab for building production-grade resilience in Kubernetes. It moves beyond introductory examples to explore advanced patterns that enable infrastructure to be intelligent, autonomous, and cost-aware. The project is inspired by the talk *"Distributed Resilience: How to Design Systems That Don't Fail (Even When Everything Else Does)"*, and serves as a practical blueprint for creating systems that recover gracefully, adapt to changing conditions, and continue operating effectively even when critical components are under stress.
 
 ---
 
 ## Why This Demo Matters
 
-Most Kubernetes demos focus on simple deployments and reactive scaling. This project focuses on **survivability and autonomy**. You'll build infrastructure that:
+Many Kubernetes demonstrations stop at basic deployments or simple autoscaling. This one is different: the emphasis is on survivability and autonomy. The scenarios guide you in creating a platform that does more than respond to failure—it anticipates it. You will see how to build decision-making into the platform so it understands business priorities, weighs cost implications, and adjusts automatically to preserve service continuity. The result is an architecture that can recover without human intervention, scale intelligently based on context, and optimize for both performance and cost.
 
-- Anticipates and mitigates failures before they escalate.
-- Makes intelligent decisions based on business context, not just metrics.
-- Recovers automatically without human intervention.
-- Optimizes cost and performance using FinOps principles.
-
-This is not a proof of concept—it’s a deployable, production-grade blueprint.
+This is not just a proof of concept. The patterns here can be deployed, adapted, and expanded into real-world environments where downtime is unacceptable and efficiency matters.
 
 ---
 
@@ -23,106 +18,104 @@ This is not a proof of concept—it’s a deployable, production-grade blueprint
 
 ![Architecture Diagram](./architecture-diagram.png)
 
-The demo architecture is built around **redundancy, autonomy, and intelligent failover**:
-
-- Two identical deployments (blue and green) provide high availability.
-- A central Kubernetes service routes traffic and can switch instantly between deployments.
-- The **blue deployment** is scaled by a custom Python-based AI agent that considers trends, cost, and business logic.
-- The **green deployment** uses traditional Kubernetes HPA (Horizontal Pod Autoscaler) for reactive scaling.
-- A **failover watcher** continuously monitors both deployments and orchestrates traffic switching when failures are detected.
-
-This architecture enables real-time decision-making, proactive recovery, and seamless user experience—even during infrastructure disruptions.
+At the heart of the demo is a redundant, autonomous, and self-correcting design. Two identical deployments, blue and green, provide high availability. A central Kubernetes Service manages traffic routing and can instantly shift connections from one deployment to the other. The blue deployment is managed by a custom Python-based AI agent capable of predictive scaling, taking into account workload patterns, cost considerations, and business logic. In contrast, the green deployment uses Kubernetes’ Horizontal Pod Autoscaler, offering a reactive scaling model that responds to changes in CPU and memory usage. A dedicated failover watcher continuously monitors both environments and coordinates traffic switching when an unhealthy state is detected. This combination allows for immediate failover, proactive scaling decisions, and uninterrupted service delivery.
 
 ---
 
-## What You'll Learn
+## What You Will Learn
 
-This project is designed to give you hands-on experience with advanced resilience techniques. You’ll explore:
-
-- **Blue/Green Deployment Switching**  
-  Implement intelligent failover logic that goes beyond basic service selectors.
-
-- **HPA vs. AI-Driven Autoscaling**  
-  Compare traditional autoscaling with agentic scaling that incorporates cost and business context.
-
-- **Failure Simulation and Recovery**  
-  Trigger realistic pod failures and observe autonomous recovery mechanisms.
-
-- **FinOps Integration**  
-  Use cost estimation to guide resource optimization and scaling decisions.
-
-- **Offline Operation**  
-  Run the entire demo without internet access to focus on architecture and logic.
-
-Each scenario is designed to reinforce practical skills and deepen your understanding of resilient system design.
+Through the exercises in this repository, you will explore how intelligent failover differs from traditional service switching, compare reactive autoscaling with AI-driven predictive scaling, and experiment with realistic failure simulations. You will also see how financial considerations can be integrated directly into scaling strategies, ensuring that infrastructure decisions balance cost and performance. The demo can be run entirely offline, enabling you to focus on the architectural and operational principles without external dependencies.
 
 ---
 
 ## Quick Start
 
-Deploy the demo environment in minutes:
+The environment can be deployed in a few straightforward steps. First, clone this repository and move into its directory:
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/rsergio07/distributed-resilience-demo.git
-   cd distributed-resilience-demo
-   ```
+```bash
+git clone https://github.com/rsergio07/distributed-resilience-demo.git
+cd distributed-resilience-demo
+```
 
-2. **Clean the environment**
-   ```bash
-   ./scripts/cleanup.sh --cluster
-   ```
+If you have previously deployed the demo, clean the environment before starting fresh:
 
-3. **Deploy the demo**
-   ```bash
-   ./scripts/deploy-offline.sh
-   ```
+```bash
+./scripts/cleanup.sh --cluster
+```
 
-4. **Verify deployment**
-   ```bash
-   kubectl -n distributed-resilience get pods
-   ```
+Deploy the offline version of the demo using:
 
-5. **Start a scenario**
-   ```bash
-   open RUNBOOK_FAILOVER.md
-   ```
+```bash
+./scripts/deploy-offline.sh
+```
 
----
+Once the scripts complete, verify the environment by listing the pods in the `distributed-resilience` namespace:
 
-## Learning Paths
+```bash
+kubectl -n distributed-resilience get pods
+```
 
-Choose a runbook based on your goals and experience level. Each runbook is a guided scenario that teaches specific resilience patterns under controlled failure conditions.
-
-### Runbook 1: Blue/Green Failover with HPA
-
-This foundational scenario introduces:
-
-- Automatic scaling under load using Kubernetes HPA.
-- Intelligent service failover when deployments become unhealthy.
-- Zero-downtime deployment switching using service redirection.
-
-**Recommended for:** Teams new to advanced Kubernetes patterns who want to understand how traditional and intelligent systems can work together.
+When the system is ready, select a scenario from the runbooks and begin your exploration.
 
 ---
 
-### Runbook 2: AI-Driven Autoscaling
+## Runbook Previews
 
-This advanced scenario explores:
+The journey begins with the [**Blue/Green Failover with HPA**](./RUNBOOK_FAILOVER.md) scenario, where you’ll witness traditional autoscaling in action while also introducing intelligent traffic switching. This chapter is designed to build a strong foundation in resilient service management, showing how Kubernetes can scale workloads under varying demand and redirect traffic seamlessly during an outage. It is ideal for those new to advanced Kubernetes patterns who want to understand how reactive scaling and intelligent failover complement each other.
 
-- Cost-aware scaling decisions using a custom Python agent.
-- Predictive infrastructure management based on historical trends.
-- Autonomous decision-making that incorporates business logic.
+From there, the experience evolves into the [**AI-Driven Autoscaling**](./RUNBOOK_AUTOSCALING.md) scenario, which shifts the focus from reacting to predicting. Here you will integrate a custom Python agent capable of making cost-aware scaling decisions based on historical trends and operational priorities. This chapter demonstrates how infrastructure can move beyond predefined thresholds, applying business logic to manage resources more strategically. It is suited for teams exploring AI-enhanced operations and autonomous infrastructure control.
 
-**Recommended for:** Experienced users and teams exploring AI-driven operations and intelligent infrastructure design.
+Both scenarios are supported by dedicated runbooks that contain the step-by-step execution details, allowing the README to remain focused on the concepts and flow while the runbooks handle the procedures.
+
+---
+
+## Experiment Ideas
+
+The runbooks provide a structured starting point, but the real value comes when you push the system beyond its default boundaries. You might introduce artificial network latency to see how the failover watcher behaves when performance degrades rather than fails outright. Another worthwhile experiment is to adjust the AI agent’s cost parameters, simulating a scenario where budget constraints become as important as performance, and observing how scaling decisions change in response.
+
+For those interested in chaos engineering principles, you could deliberately crash only part of a deployment, leaving some pods running but in a degraded state, and evaluate whether the system recognizes the partial failure quickly enough to trigger corrective action. Testing in different cluster sizes and node configurations can also reveal how well the resilience patterns scale, and whether the AI agent adapts as effectively in smaller or more resource-constrained environments.
+
+These experiments are not just stress tests—they are opportunities to refine your understanding of how resilient architecture behaves under varying operational realities, and to identify the thresholds at which proactive measures are triggered versus reactive ones.
+
+---
+
+## Operational Metrics
+
+Resilience is only meaningful if it can be measured. Throughout the demo, you can track key metrics that reveal how well the system performs under stress. Failover time measures how quickly the platform detects an unhealthy deployment and redirects traffic to a healthy one. Scaling latency shows the interval between a workload trigger and the moment new capacity is available, providing insight into both HPA responsiveness and AI agent prediction accuracy.
+
+Cost per request is another important indicator, especially in the AI-driven scenario where budget constraints influence scaling behavior. By observing how this metric changes before and after scaling events, you can assess whether the system is optimizing for financial efficiency without compromising performance. Additionally, you can monitor service error rates during failure simulations to understand the user impact and validate that recovery mechanisms are functioning as intended.
+
+Together, these metrics turn the demo into more than a visual exercise—they provide a quantifiable view of resilience, making it easier to justify design decisions and identify areas for improvement.
+
+---
+
+## Real-World Applications
+
+The patterns demonstrated in this demo are not limited to a controlled lab. In industries such as finance, where transaction processing must remain uninterrupted, intelligent failover ensures that trading platforms or payment systems can survive sudden node failures or traffic surges without user-visible downtime. In retail and e-commerce, AI-driven scaling can be used to prepare for predictable events such as seasonal sales, increasing capacity in advance based on historical demand while keeping operational costs under control.
+
+SaaS providers can integrate similar architectures to maintain service availability across multiple regions, automatically rebalancing workloads when a data center experiences latency or partial outages. Even public sector systems—where budget oversight is as important as uptime—can benefit from cost-aware scaling policies that keep infrastructure lean without sacrificing reliability.
+
+Because the underlying mechanisms are built on Kubernetes, these principles apply to any environment that values availability, efficiency, and adaptability. Whether your workloads run in the cloud, on-premises, or in hybrid deployments, the same core concepts can be adapted to meet organizational priorities while preserving operational excellence.
+
+---
+
+## Limitations and Next Steps
+
+While this demo presents a solid foundation for designing resilient Kubernetes systems, it does operate within certain boundaries. The AI agent, for example, is tailored for this lab environment and does not yet integrate with external telemetry sources such as enterprise observability platforms or cloud cost APIs. Its decision-making models are simplified to ensure reproducibility in offline mode, meaning real-world deployments would require deeper integration and more sophisticated prediction models.
+
+The failover watcher in this implementation is cluster-scoped and assumes a single namespace for simplicity. In production, you would likely extend its scope to multiple namespaces, clusters, or even cross-cloud failover scenarios. Similarly, while the architecture supports offline execution, many production workloads depend on continuous integration with external systems—adding such dependencies introduces complexity that is beyond the current lab’s scope.
+
+Future enhancements could include integrating with Prometheus and Grafana for richer metric analysis, adding automated chaos experiments using tools like LitmusChaos or Chaos Mesh, and introducing multi-cluster federation to handle region-wide failures. Extending the AI logic to consider security posture, compliance constraints, and workload classification would also bring the architecture closer to production-grade decision-making.
+
+By addressing these areas, the lab can evolve from a controlled demonstration into a fully deployable blueprint for intelligent, autonomous, and cost-efficient Kubernetes infrastructure.
 
 ---
 
 ## Additional Resources
 
-- **Runbooks:** Step-by-step guides for each scenario, located in the root directory.
-- **Scripts:** Automation tools for deployment, cleanup, and simulation.
-- **Architecture Diagram:** Visual reference for system components and traffic flow.
-- **Offline Mode:** All dependencies are bundled for isolated environments.
+Beyond the runbooks, you will find a set of supporting tools and materials that make experimentation easier. Deployment and cleanup scripts automate environment setup and teardown, ensuring a consistent lab experience every time. The architecture diagram serves as a visual reference for the interactions between components, and offline mode enables the entire environment to run without external dependencies—ideal for controlled lab networks or training environments.
+
+For guidance on how to contribute improvements or suggest changes, see the [**Contributing Guidelines**](./CONTRIBUTING.md).
+For license terms and usage permissions, refer to the [**License**](./LICENSE.md).
 
 ---
