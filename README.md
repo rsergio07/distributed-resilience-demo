@@ -75,15 +75,19 @@ The runbooks provide a structured starting point, but the real value comes when 
 
 For those interested in chaos engineering principles, you could deliberately crash only part of a deployment, leaving some pods running but in a degraded state, and evaluate whether the system recognizes the partial failure quickly enough to trigger corrective action. Testing in different cluster sizes and node configurations can also reveal how well the resilience patterns scale, and whether the AI agent adapts as effectively in smaller or more resource-constrained environments.
 
-These experiments are not just stress tests—they are opportunities to refine your understanding of how resilient architecture behaves under varying operational realities, and to identify the thresholds at which proactive measures are triggered versus reactive ones.
+These experiments are not just stress tests—they are opportunities to refine your understanding of how resilient architecture behaves under varying operational realities, and to identify the thresholds at which proactive measures are triggered versus reactive ones.  
+
+If cost optimization is part of your resilience strategy, you can extend these experiments by running the [`cost/calc_costs.py`](./cost/calc_costs.py) script after each configuration change. This will help you quantify the financial impact of different scaling patterns and failover approaches before applying them in a production environment.
 
 ---
 
 ## Operational Metrics
 
-Resilience is only meaningful if it can be measured. Throughout the demo, you can track key metrics that reveal how well the system performs under stress. Failover time measures how quickly the platform detects an unhealthy deployment and redirects traffic to a healthy one. Scaling latency shows the interval between a workload trigger and the moment new capacity is available, providing insight into both HPA responsiveness and AI agent prediction accuracy.
+Resilience is only meaningful if it can be measured. Throughout the demo, you can track key metrics that reveal how well the system performs under stress. Failover time measures how quickly the platform detects an unhealthy deployment and redirects traffic to a healthy one. Scaling latency shows the interval between a workload trigger and the moment new capacity is available, providing insight into both HPA responsiveness and AI agent prediction accuracy.  
 
-Cost per request is another important indicator, especially in the AI-driven scenario where budget constraints influence scaling behavior. By observing how this metric changes before and after scaling events, you can assess whether the system is optimizing for financial efficiency without compromising performance. Additionally, you can monitor service error rates during failure simulations to understand the user impact and validate that recovery mechanisms are functioning as intended.
+Cost per request is another important indicator, especially in the AI-driven scenario where budget constraints influence scaling behavior. By observing how this metric changes before and after scaling events, you can assess whether the system is optimizing for financial efficiency without compromising performance. Additionally, you can monitor service error rates during failure simulations to understand the user impact and validate that recovery mechanisms are functioning as intended.  
+
+For a practical way to model cost implications, this repository includes a lightweight calculator at [`cost/calc_costs.py`](./cost/calc_costs.py). Running this script allows you to simulate monthly costs for different deployment and scaling strategies—such as always-on, peak-hour scaling, and scale-to-zero—and compare savings against a chosen baseline. The underlying assumptions are documented in [`cost/cost_assumptions.md`](./cost/cost_assumptions.md), and can be adjusted to match your own pricing and workload patterns.  
 
 Together, these metrics turn the demo into more than a visual exercise—they provide a quantifiable view of resilience, making it easier to justify design decisions and identify areas for improvement.
 
