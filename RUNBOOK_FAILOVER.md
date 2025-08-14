@@ -26,7 +26,7 @@ What this does:
 Use if you have already preloaded all required images locally.
 
 ```bash
-IMAGE_TAG=resilience-demo:1.1 ./scripts/deploy-offline.sh
+./scripts/deploy-offline.sh
 ```
 
 Behind the scenes:
