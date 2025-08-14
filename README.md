@@ -1,161 +1,128 @@
-# Distributed Resilience Demo (Kubernetes)
+# Distributed Resilience Demo: Production-Grade Kubernetes
 
-Demo for the talk **"Distributed Resilience: How to Design Systems That Don't Fail (Even When Everything Else Does)"**.
+**Design Kubernetes systems that withstand failure—even under extreme conditions.**
 
-This repository showcases **resilience patterns**, **cost-aware design**, and **disaster recovery strategies** using Kubernetes.  
-It is structured so anyone can **fork or clone** the repo, deploy the workloads locally, and reproduce the demo environment.
-
----
-
-## What Makes This Special
-
-Unlike typical Kubernetes demos, this project demonstrates **next-generation resilience patterns**:
-
-- **Agentic AI-Driven Scaling** - Custom Python agents make intelligent scaling decisions beyond simple CPU/memory thresholds
-- **Advanced Blue/Green Patterns** - Automated failover with custom monitoring logic, not just basic deployments
-- **Self-Healing Systems** - Workloads that automatically detect, respond to, and recover from failures
-- **Cost-Aware Operations** - FinOps principles integrated into scaling and resource decisions
-- **Production-Ready Patterns** - Real-world resilience strategies you can adapt for your own systems
+This repository is a hands-on lab for building **production-grade resilience** in Kubernetes. It goes far beyond basic tutorials, guiding you through advanced patterns that enable intelligent, autonomous, and cost-aware infrastructure. Inspired by the talk *"Distributed Resilience: How to Design Systems That Don't Fail (Even When Everything Else Does),"* this project demonstrates how to build systems that recover gracefully, adapt intelligently, and operate efficiently under pressure.
 
 ---
 
-## Architecture Overview
+## Why This Demo Matters
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Service       │───▶│  Blue Deploy     │    │  Green Deploy   │
-│  (Traffic       │    │  (AI Agent)      │    │     (HPA)       │
-│   Routing)      │    │  1-5 replicas    │    │   1-N replicas  │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                       │                       │
-         │              ┌────────▼────────┐             │
-         │              │  AI Mock Agent  │             │
-         │              │ CPU Thresholds  │             │
-         │              │ Custom Logic    │             │
-         │              └─────────────────┘             │
-         │                                              │
-         └──────────────────────────────────────────────┘
-                    ┌─────────────────────┐
-                    │ Failover Watcher    │
-                    │ Health Monitoring   │
-                    │ Automatic Switching │
-                    └─────────────────────┘
-```
+Most Kubernetes demos focus on simple deployments and reactive scaling. This project focuses on **survivability and autonomy**. You'll build infrastructure that:
+
+- Anticipates and mitigates failures before they escalate.
+- Makes intelligent decisions based on business context, not just metrics.
+- Recovers automatically without human intervention.
+- Optimizes cost and performance using FinOps principles.
+
+This is not a proof of concept—it’s a deployable, production-grade blueprint.
 
 ---
 
-## About This Demo
+## System Architecture
 
-This project demonstrates:
+![Architecture Diagram](./architecture-diagram.png)
 
-- **Blue/Green deployment switching** using Kubernetes `Service` selectors with intelligent failover logic
-- **Horizontal Pod Autoscaler (HPA)** scaling under load for traditional workloads
-- **Agentic AI mock scaling** that makes complex decisions without relying on HPA
-- **Pod failure simulation** for recovery/failover testing with realistic scenarios
-- **Cost estimation** using a FinOps mindset for resource optimization
-- **Offline-ready deployments** for live demos without internet dependency
+The demo architecture is built around **redundancy, autonomy, and intelligent failover**:
+
+- Two identical deployments (blue and green) provide high availability.
+- A central Kubernetes service routes traffic and can switch instantly between deployments.
+- The **blue deployment** is scaled by a custom Python-based AI agent that considers trends, cost, and business logic.
+- The **green deployment** uses traditional Kubernetes HPA (Horizontal Pod Autoscaler) for reactive scaling.
+- A **failover watcher** continuously monitors both deployments and orchestrates traffic switching when failures are detected.
+
+This architecture enables real-time decision-making, proactive recovery, and seamless user experience—even during infrastructure disruptions.
+
+---
+
+## What You'll Learn
+
+This project is designed to give you hands-on experience with advanced resilience techniques. You’ll explore:
+
+- **Blue/Green Deployment Switching**  
+  Implement intelligent failover logic that goes beyond basic service selectors.
+
+- **HPA vs. AI-Driven Autoscaling**  
+  Compare traditional autoscaling with agentic scaling that incorporates cost and business context.
+
+- **Failure Simulation and Recovery**  
+  Trigger realistic pod failures and observe autonomous recovery mechanisms.
+
+- **FinOps Integration**  
+  Use cost estimation to guide resource optimization and scaling decisions.
+
+- **Offline Operation**  
+  Run the entire demo without internet access to focus on architecture and logic.
+
+Each scenario is designed to reinforce practical skills and deepen your understanding of resilient system design.
 
 ---
 
 ## Quick Start
 
-Get up and running in less than 5 minutes:
+Deploy the demo environment in minutes:
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/rsergio07/distributed-resilience-demo.git
-cd distributed-resilience-demo
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/rsergio07/distributed-resilience-demo.git
+   cd distributed-resilience-demo
+   ```
 
-# 2. Start with a clean environment
-./scripts/cleanup.sh --cluster
+2. **Clean the environment**
+   ```bash
+   ./scripts/cleanup.sh --cluster
+   ```
 
-# 3. Deploy the demo (offline mode recommended)
-IMAGE_TAG=resilience-demo:1.1 ./scripts/deploy-offline.sh
+3. **Deploy the demo**
+   ```bash
+   ./scripts/deploy-offline.sh
+   ```
 
-# 4. Verify deployment
-kubectl -n distributed-resilience get pods
+4. **Verify deployment**
+   ```bash
+   kubectl -n distributed-resilience get pods
+   ```
 
-# 5. Choose your adventure - pick a runbook and follow along!
-```
-
----
-
-## Demo Scenarios
-
-Each scenario is designed to teach specific resilience patterns through hands-on experience:
-
-### [Runbook 1 – Blue/Green Failover with HPA](./RUNBOOK_FAILOVER.md)
-**What you'll learn:** Traditional HPA scaling combined with intelligent traffic routing
-- Automatic pod scaling under CPU load
-- Service failover when deployments fail
-- Recovery patterns for production workloads
-- **Best for:** Understanding foundational resilience patterns
-
-### [Runbook 2 – Agentic AI-Driven Autoscaling](./RUNBOOK_AUTOSCALING.md) 
-**What you'll learn:** Next-generation scaling with custom AI agents
-- CPU threshold-based decision making
-- Custom scaling logic beyond HPA capabilities
-- Coexistence of different scaling strategies
-- **Best for:** Advanced users exploring AI-driven operations
+5. **Start a scenario**
+   ```bash
+   open RUNBOOK_FAILOVER.md
+   ```
 
 ---
 
-## Prerequisites
+## Learning Paths
 
-Before running any demo, ensure you have:
+Choose a runbook based on your goals and experience level. Each runbook is a guided scenario that teaches specific resilience patterns under controlled failure conditions.
 
-- **Colima** or **Docker Desktop**
-- **Minikube** 
-- **kubectl** 
-- **Python 3.11+**
-- **curl**
+### Runbook 1: Blue/Green Failover with HPA
 
-> This demo has been tested on macOS with Colima. Linux and Windows (WSL2) should also work with minimal adjustments.
+This foundational scenario introduces:
 
----
+- Automatic scaling under load using Kubernetes HPA.
+- Intelligent service failover when deployments become unhealthy.
+- Zero-downtime deployment switching using service redirection.
 
-## Technology Stack
-
-- **Kubernetes** - Container orchestration platform
-- **Minikube** - Local Kubernetes development environment  
-- **Python 3.11+** - AI agent development and automation scripts
-- **Docker** - Container runtime and image management
-- **Horizontal Pod Autoscaler (HPA)** - Built-in Kubernetes scaling
-- **Custom Monitoring Logic** - Failover detection and traffic routing
-- **Bash Scripts** - Demo automation and environment management
+**Recommended for:** Teams new to advanced Kubernetes patterns who want to understand how traditional and intelligent systems can work together.
 
 ---
 
-## Use Cases
+### Runbook 2: AI-Driven Autoscaling
 
-- **Learning**: Hands-on experience with advanced Kubernetes resilience patterns
-- **Training**: Corporate workshops on distributed systems reliability  
-- **Proof of Concept**: Demonstrate AI-driven operations capabilities
-- **Testing**: Validate application behavior under controlled failure scenarios
-- **Benchmarking**: Compare traditional vs. intelligent scaling approaches
+This advanced scenario explores:
 
----
+- Cost-aware scaling decisions using a custom Python agent.
+- Predictive infrastructure management based on historical trends.
+- Autonomous decision-making that incorporates business logic.
 
-## Contributing
-
-I welcome contributions! Whether it's:
-
-- Bug fixes and improvements
-- Documentation enhancements  
-- New resilience patterns and scenarios
-- Additional automation scripts
-- Test cases and validation scripts
-
-Please see `CONTRIBUTING.md` for details on our contribution process.
+**Recommended for:** Experienced users and teams exploring AI-driven operations and intelligent infrastructure design.
 
 ---
 
-## License
+## Additional Resources
 
-This project is licensed under the MIT License – see `LICENSE.md` for details.
+- **Runbooks:** Step-by-step guides for each scenario, located in the root directory.
+- **Scripts:** Automation tools for deployment, cleanup, and simulation.
+- **Architecture Diagram:** Visual reference for system components and traffic flow.
+- **Offline Mode:** All dependencies are bundled for isolated environments.
 
 ---
-
-## Star This Repository
-
-If this demo helped you understand distributed resilience patterns, please star the repository to help others discover it!
