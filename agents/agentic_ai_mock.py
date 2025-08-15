@@ -1,78 +1,99 @@
 #!/usr/bin/env python3
-"""
-Agentic AI (mock) for Kubernetes:
-- Observes CPU via `kubectl top pods`
-- Decides with hysteresis: HIGH -> scale up, LOW -> scale down
-- Acts only when desired != current replicas
-- Cooldown between actions to avoid flapping
-"""
+import subprocess
+import random
+import time
+from datetime import datetime
 
-import subprocess, time, os
-from statistics import mean
+# Settings
+MAX_REPLICAS = 5
+MIN_REPLICAS = 1
+NAMESPACE = "distributed-resilience"
+DEPLOYMENT = "web-blue"
+BUSINESS_HOURS = (8, 18)  # 08:00 to 18:00 local time
+LOG_FILE = "agentic_ai_decisions.log"
 
-NS         = os.getenv("NAMESPACE", "distributed-resilience")
-DEPLOY     = os.getenv("DEPLOYMENT", "web-blue")   # set to web-green if you want
-HIGH_M     = int(os.getenv("HIGH_M", "120"))       # scale up if avg CPU > HIGH_M (mCPU)
-LOW_M      = int(os.getenv("LOW_M", "40"))         # scale down if avg CPU < LOW_M
-UP_REPL    = int(os.getenv("UP_REPLICAS", "5"))
-DOWN_REPL  = int(os.getenv("DOWN_REPL", "1"))
-INTERVAL_S = int(os.getenv("INTERVAL_S", "10"))
-COOLDOWN_S = int(os.getenv("COOLDOWN_S", "30"))    # minimum seconds between actions
+# Mock cost data
+COST_PER_REPLICA_PER_HOUR = 0.05  # USD (example)
 
-last_action_at = 0
-
-def k(*args):
-    return subprocess.run(["kubectl", "-n", NS, *args], text=True,
-                          capture_output=True)
-
-def get_avg_cpu_m():
-    r = k("top", "pods", "--no-headers")
-    if r.returncode != 0 or not r.stdout.strip():
-        return 0
-    vals = []
-    for line in r.stdout.strip().splitlines():
-        cols = line.split()
-        if len(cols) >= 2 and cols[1].endswith("m"):
-            try:
-                vals.append(int(cols[1][:-1]))
-            except ValueError:
-                pass
-    return int(mean(vals)) if vals else 0
+def log_decision(message):
+    """Append decisions and events to a log file with timestamps."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    entry = f"[{timestamp}] {message}"
+    print(entry)
+    with open(LOG_FILE, "a") as log:
+        log.write(entry + "\n")
 
 def get_current_replicas():
-    r = k("get", "deploy", DEPLOY, "-o", "jsonpath={.spec.replicas}")
-    return int(r.stdout or 0)
+    try:
+        result = subprocess.run(
+            ["kubectl", "get", "deployment", DEPLOYMENT, "-n", NAMESPACE, "-o", "jsonpath={.spec.replicas}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        return int(result.stdout.strip())
+    except subprocess.CalledProcessError as e:
+        log_decision(f"[ERROR] Could not get current replicas: {e.stderr.strip()}")
+        return None
 
-def scale_to(n):
-    global last_action_at
-    now = time.time()
-    if now - last_action_at < COOLDOWN_S:
-        print(f"[AI-Agent] Cooldown active ({int(COOLDOWN_S - (now - last_action_at))}s left), skip action.")
-        return
-    cur = get_current_replicas()
-    if cur == n:
-        print(f"[AI-Agent] Desired replicas={n} equals current={cur}; no action.")
-        return
-    print(f"[AI-Agent] Scaling {DEPLOY} from {cur} -> {n}")
-    r = k("scale", "deployment", DEPLOY, f"--replicas={n}")
-    if r.returncode != 0:
-        print(f"[AI-Agent] scale error: {r.stderr.strip()}")
-    else:
-        last_action_at = now
+def scale_replicas(count):
+    try:
+        subprocess.run(
+            ["kubectl", "scale", f"deployment/{DEPLOYMENT}", f"--replicas={count}", "-n", NAMESPACE],
+            check=True
+        )
+        log_decision(f"[ACTION] Scaled to {count} replicas. Estimated hourly cost: ${count * COST_PER_REPLICA_PER_HOUR:.2f}")
+    except subprocess.CalledProcessError as e:
+        log_decision(f"[ERROR] Could not scale deployment: {e.stderr.strip()}")
+
+def simulate_cpu_trend():
+    """
+    Simulates CPU usage percentage.
+    Trend: slight increase or decrease over time.
+    """
+    return random.randint(40, 95)
 
 def main():
-    print(f"[AI-Agent] Watching ns={NS}, deploy={DEPLOY}")
-    print(f"[AI-Agent] Thresholds: HIGH>{HIGH_M}m -> {UP_REPL} | LOW<{LOW_M}m -> {DOWN_REPL}")
+    log_decision(f"[START] Agentic AI Mock started for deployment '{DEPLOYMENT}' in namespace '{NAMESPACE}'")
+    log_decision(f"[INFO] Business hours: {BUSINESS_HOURS[0]:02d}:00 to {BUSINESS_HOURS[1]:02d}:00")
+    log_decision(f"[INFO] Max replicas: {MAX_REPLICAS}, Min replicas: {MIN_REPLICAS}")
+    log_decision("------------------------------------------------------")
+
     while True:
-        avg = get_avg_cpu_m()
-        print(f"[AI-Agent] Avg CPU: {avg}m")
-        if avg > HIGH_M:
-            scale_to(UP_REPL)
-        elif avg < LOW_M:
-            scale_to(DOWN_REPL)
+        # Local time check
+        now = datetime.now()
+        if now.hour < BUSINESS_HOURS[0] or now.hour >= BUSINESS_HOURS[1]:
+            log_decision(f"[INFO] Outside business hours ({now.strftime('%H:%M')}). No scaling action.")
+            time.sleep(60)
+            continue
+
+        # Get current state
+        current_replicas = get_current_replicas()
+        if current_replicas is None:
+            time.sleep(60)
+            continue
+
+        # Simulate CPU usage
+        cpu_usage = simulate_cpu_trend()
+        log_decision(f"[METRIC] Simulated CPU usage: {cpu_usage}% | Current replicas: {current_replicas}")
+
+        # Scaling logic
+        if cpu_usage > 80 and current_replicas < MAX_REPLICAS:
+            new_replicas = current_replicas + 1
+            log_decision(f"[DECISION] High CPU detected. Gradually scaling up to {new_replicas} replicas.")
+            scale_replicas(new_replicas)
+
+        elif cpu_usage < 50 and current_replicas > MIN_REPLICAS:
+            new_replicas = current_replicas - 1
+            log_decision(f"[DECISION] Low CPU detected. Scaling down to {new_replicas} replicas to save cost.")
+            scale_replicas(new_replicas)
+
         else:
-            print("[AI-Agent] Within band; hold steady.")
-        time.sleep(INTERVAL_S)
+            log_decision("[DECISION] No scaling change needed.")
+
+        # Wait before next check
+        time.sleep(60)
 
 if __name__ == "__main__":
     main()
