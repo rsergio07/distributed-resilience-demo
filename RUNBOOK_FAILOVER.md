@@ -104,7 +104,7 @@ web-green   Deployment/web-green  1%/50%      1         5         1       1m
 
 **Terminal Window 3: Live CPU Monitoring**
 ```bash
-kubectl -n distributed-resilience top pods
+watch -n 2 'kubectl -n distributed-resilience top pods'
 ```
 
 **Current resource consumption:**
@@ -233,22 +233,45 @@ You'll see the green version of the app serving traffic while blue recovers.
 
 ---
 
-## Step 8 – Demonstrate Recovery Strategy
+## Step 8 – Explore the Cost Implications of Resilience
 
-> **What I'm doing**: "Our system is now running on green, but what about getting back to blue? Let's see our recovery strategy in action."
+> **What I'm doing**: "We've seen how resilience works in practice. Now, let's look at the financial side. How do these patterns impact our cloud bill? Our `calc_costs.py` script helps us understand the trade-offs."
 
-**Force switch back to blue (optional):**
+**Run the Cost Simulation Script**
 ```bash
-kubectl -n distributed-resilience patch svc web -p '{"spec":{"selector":{"app":"web","version":"blue"}}}'
+python3 cost/calc_costs.py
 ```
 
-**Watcher confirms the change:**
-```
-[watcher] blue_ready=1/1 green_ready=1/1 current_service=blue
-[watcher] Successfully switched back to BLUE deployment
-```
+**What this command does:**
 
-> **What this teaches us**: "In production, you might stay on green until you've verified blue is truly healthy. The beauty of blue/green is you can switch back and forth instantly with zero downtime."
+  - Runs a Python script that calculates monthly infrastructure costs for various deployment scenarios.
+  - Models different strategies, including:
+      - A single, always-on deployment (minimal cost, low resilience).
+      - An always-on blue/green dual deployment (higher cost, high resilience).
+      - Autoscaling to a higher number of pods during peak hours.
+      - Scaling down to zero pods during off-hours to save money.
+  - Presents a comparison report, showing potential savings or increased costs relative to a baseline.
+
+> > **What I'm explaining**: "The report shows that while an 'always-on blue+green' strategy gives you maximum resilience, it also has a higher baseline cost. However, intelligent autoscaling and strategies like 'scale-to-zero' during idle periods can significantly optimize expenses without sacrificing reliability where it matters."
+
+**Expected terminal output (example):**
+
+```bash
+=== Cost Simulation Report ===
+Assumptions:
+  vCPU price: $0.12/vCPU-hour
+  Pod CPU request: 100m
+  Hours/month: 730
+  Peak hours/day: 2, Off-hours/day: 8
+  Baseline scenario: Always-on blue+green (2 pods)
+
+Scenario                                      Monthly Cost    Savings vs Baseline
+------------------------------------------------------------------------------------
+Always-on blue (1 pod)                             $8.76         +50.0%
+Always-on blue+green (2 pods)                     $17.52           +0.0%
+Peak 5 pods for 2h/day + 1 pod rest               $12.26         +30.0%
+Scale-to-zero off-hours (8h/day off)               $6.57         +62.5%
+```
 
 ---
 
