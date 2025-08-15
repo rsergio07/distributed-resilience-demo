@@ -1,4 +1,4 @@
-# RUNBOOK_FAILOVER.md – Blue/Green Resilience with HPA + Auto-Failover
+# Blue/Green Resilience with HPA + Auto-Failover
 
 This runbook demonstrates **production-grade resilience patterns** in action. You'll watch a Kubernetes workload automatically self-heal, intelligently scale under load, and seamlessly recover from catastrophic failures—all without human intervention.
 
