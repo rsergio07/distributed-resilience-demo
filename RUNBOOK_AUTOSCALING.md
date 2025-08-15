@@ -1,4 +1,4 @@
-# RUNBOOK_AUTOSCALING.md – Agentic AI-Driven Scaling for Blue Deployment
+# Agentic AI-Driven Scaling for Blue Deployment
 
 This runbook demonstrates the **next generation of intelligent scaling** - moving beyond simple CPU thresholds to AI-driven decision making. Instead of relying solely on Kubernetes HPA, we'll deploy a custom Python agent that makes sophisticated scaling decisions based on multiple signals and business logic.
 
