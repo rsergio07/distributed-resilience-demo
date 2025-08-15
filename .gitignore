@@ -1,4 +1,4 @@
 # local images
 images/*.tar
 # macOS cruft
-.DS_Store
+.DS_Storeagentic_ai_decisions.log
