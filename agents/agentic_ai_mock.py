@@ -1,99 +1,143 @@
-#!/usr/bin/env python3
-import subprocess
-import random
+import os
 import time
-from datetime import datetime
+import subprocess
+import json
+import re
 
-# Settings
-MAX_REPLICAS = 5
-MIN_REPLICAS = 1
-NAMESPACE = "distributed-resilience"
-DEPLOYMENT = "web-blue"
-BUSINESS_HOURS = (8, 18)  # 08:00 to 18:00 local time
-LOG_FILE = "agentic_ai_decisions.log"
+# Constants
+NAMESPACE = os.environ.get("NAMESPACE", "distributed-resilience")
+DEPLOYMENT = os.environ.get("DEPLOYMENT", "web-blue")
+HIGH_CPU_THRESHOLD_PERCENT = int(os.environ.get("HIGH_M", 90))
+LOW_CPU_THRESHOLD_PERCENT = int(os.environ.get("LOW_M", 30))
+MAX_REPLICAS = int(os.environ.get("UP_REPLICAS", 5))
+MIN_REPLICAS = int(os.environ.get("DOWN_REPL", 1))
 
-# Mock cost data
-COST_PER_REPLICA_PER_HOUR = 0.05  # USD (example)
+# Trend detection
+CPU_TREND = []
+TREND_LENGTH = 3  # Number of consecutive high/low readings to confirm a trend
 
-def log_decision(message):
-    """Append decisions and events to a log file with timestamps."""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    entry = f"[{timestamp}] {message}"
-    print(entry)
-    with open(LOG_FILE, "a") as log:
-        log.write(entry + "\n")
+# Cost calculation
+HOURLY_COST_PER_REPLICA = 0.05
+COST_LOG_FILE = "agentic_ai_decisions.log"
 
-def get_current_replicas():
-    try:
-        result = subprocess.run(
-            ["kubectl", "get", "deployment", DEPLOYMENT, "-n", NAMESPACE, "-o", "jsonpath={.spec.replicas}"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=True
-        )
-        return int(result.stdout.strip())
-    except subprocess.CalledProcessError as e:
-        log_decision(f"[ERROR] Could not get current replicas: {e.stderr.strip()}")
-        return None
+def log_with_timestamp(message):
+    """Logs a message with a timestamp."""
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+    print(f"[{timestamp}] {message}")
 
-def scale_replicas(count):
-    try:
-        subprocess.run(
-            ["kubectl", "scale", f"deployment/{DEPLOYMENT}", f"--replicas={count}", "-n", NAMESPACE],
-            check=True
-        )
-        log_decision(f"[ACTION] Scaled to {count} replicas. Estimated hourly cost: ${count * COST_PER_REPLICA_PER_HOUR:.2f}")
-    except subprocess.CalledProcessError as e:
-        log_decision(f"[ERROR] Could not scale deployment: {e.stderr.strip()}")
-
-def simulate_cpu_trend():
+def get_cpu_metrics(deployment_name):
     """
-    Simulates CPU usage percentage.
-    Trend: slight increase or decrease over time.
+    Fetches the average CPU usage for a given deployment by its labels.
+    Returns the average CPU percentage and the number of replicas.
     """
-    return random.randint(40, 95)
+    try:
+        # Get all pod names for the deployment using its labels
+        pod_names_cmd = ["kubectl", "get", "pods", "-n", NAMESPACE, "-l", f"app=web,version={deployment_name.split('-')[-1]}", "-o", "jsonpath='{.items[*].metadata.name}'"]
+        pod_names_output = subprocess.run(pod_names_cmd, capture_output=True, text=True, check=True).stdout.strip().strip("'")
+        pod_names = pod_names_output.split() if pod_names_output else []
+
+        if not pod_names:
+            return 0, 0
+
+        total_cpu = 0
+        running_pods = 0
+        
+        # Check pod status to avoid errors on non-running pods
+        pod_status_cmd = ["kubectl", "get", "pods", "-n", NAMESPACE, "-l", f"app=web,version={deployment_name.split('-')[-1]}", "-o", "json"]
+        pod_status_output = subprocess.run(pod_status_cmd, capture_output=True, text=True, check=True).stdout
+        pods_info = json.loads(pod_status_output)
+        
+        ready_pods = [p for p in pods_info['items'] if p['status']['phase'] == 'Running' and all(c['ready'] for c in p['status'].get('containerStatuses', []))]
+        
+        if not ready_pods:
+            return 0, len(pod_names)
+
+        for pod in ready_pods:
+            pod_name = pod['metadata']['name']
+            top_cmd = ["kubectl", "top", "pod", "-n", NAMESPACE, pod_name]
+            top_output = subprocess.run(top_cmd, capture_output=True, text=True, check=True).stdout
+            
+            lines = top_output.strip().split('\n')
+            if len(lines) > 1:
+                parts = re.split(r'\s+', lines[1])
+                cpu_core = parts[1]
+                if cpu_core.endswith('m'):
+                    cpu_milli = int(cpu_core[:-1])
+                    total_cpu += cpu_milli
+                    running_pods += 1
+
+        if running_pods == 0:
+            return 0, len(pod_names)
+            
+        # Assuming 1000m is 100% of a core
+        average_cpu_percent = (total_cpu / running_pods) / 10
+        return int(average_cpu_percent), len(pod_names)
+    except Exception as e:
+        log_with_timestamp(f"[ERROR] Could not get metrics: {e}")
+        return 0, 0
+
+def scale_deployment(replicas):
+    """Scales the deployment to the specified number of replicas."""
+    try:
+        cmd = ["kubectl", "scale", "deployment", "-n", NAMESPACE, DEPLOYMENT, f"--replicas={replicas}"]
+        subprocess.run(cmd, check=True)
+        log_with_timestamp(f"[ACTION] Scaled to {replicas} replicas. Estimated hourly cost: ${replicas * HOURLY_COST_PER_REPLICA:.2f}")
+    except Exception as e:
+        log_with_timestamp(f"[ERROR] Could not scale deployment: {e}")
+
+def make_scaling_decision(cpu_percent, replicas):
+    """
+    Decides whether to scale up or down based on current metrics and trends.
+    This is where the "intelligent" logic resides.
+    """
+    # Simple moving average for trend detection
+    CPU_TREND.append(cpu_percent)
+    if len(CPU_TREND) > TREND_LENGTH:
+        CPU_TREND.pop(0)
+
+    # Scale up logic
+    if cpu_percent > HIGH_CPU_THRESHOLD_PERCENT and replicas < MAX_REPLICAS:
+        if all(c > HIGH_CPU_THRESHOLD_PERCENT for c in CPU_TREND):
+            if replicas == 0:
+                # Special case to go from 0 to MIN_REPLICAS
+                log_with_timestamp("[DECISION] Sustained high CPU trend detected. Gradually scaling up.")
+                new_replicas = replicas + 1
+            else:
+                log_with_timestamp("[DECISION] Sustained high CPU trend detected. Gradually scaling up.")
+                # Only scale up by one replica at a time.
+                new_replicas = replicas + 1
+            scale_deployment(new_replicas)
+            time.sleep(15)  # Add a delay to make the gradual effect visible.
+        else:
+            log_with_timestamp("[DECISION] High CPU spike detected, waiting for sustained trend.")
+    
+    # Scale down logic
+    elif cpu_percent < LOW_CPU_THRESHOLD_PERCENT and replicas > MIN_REPLICAS:
+        if all(c < LOW_CPU_THRESHOLD_PERCENT for c in CPU_TREND):
+            log_with_timestamp("[DECISION] Sustained low CPU trend detected. Gradually scaling down.")
+            # Only scale down by one replica at a time.
+            new_replicas = replicas - 1
+            scale_deployment(new_replicas)
+            time.sleep(15) # Add a delay to make the gradual effect visible.
+        else:
+            log_with_timestamp("[DECISION] Low CPU detected, waiting for sustained trend.")
+    
+    else:
+        log_with_timestamp("[DECISION] Current state is optimal. No scaling needed.")
 
 def main():
-    log_decision(f"[START] Agentic AI Mock started for deployment '{DEPLOYMENT}' in namespace '{NAMESPACE}'")
-    log_decision(f"[INFO] Business hours: {BUSINESS_HOURS[0]:02d}:00 to {BUSINESS_HOURS[1]:02d}:00")
-    log_decision(f"[INFO] Max replicas: {MAX_REPLICAS}, Min replicas: {MIN_REPLICAS}")
-    log_decision("------------------------------------------------------")
-
+    """Main loop for the agent."""
+    log_with_timestamp(f"[START] Agentic AI started for deployment '{DEPLOYMENT}'")
+    log_with_timestamp(f"[INFO] Monitoring CPU trends and making intelligent scaling decisions.")
+    log_with_timestamp(f"[INFO] Thresholds: Scale-up >{HIGH_CPU_THRESHOLD_PERCENT}%, Scale-down <{LOW_CPU_THRESHOLD_PERCENT}%")
+    log_with_timestamp(f"[INFO] Max replicas: {MAX_REPLICAS}, Min replicas: {MIN_REPLICAS}")
+    log_with_timestamp("-" * 50)
+    
     while True:
-        # Local time check
-        now = datetime.now()
-        if now.hour < BUSINESS_HOURS[0] or now.hour >= BUSINESS_HOURS[1]:
-            log_decision(f"[INFO] Outside business hours ({now.strftime('%H:%M')}). No scaling action.")
-            time.sleep(60)
-            continue
-
-        # Get current state
-        current_replicas = get_current_replicas()
-        if current_replicas is None:
-            time.sleep(60)
-            continue
-
-        # Simulate CPU usage
-        cpu_usage = simulate_cpu_trend()
-        log_decision(f"[METRIC] Simulated CPU usage: {cpu_usage}% | Current replicas: {current_replicas}")
-
-        # Scaling logic
-        if cpu_usage > 80 and current_replicas < MAX_REPLICAS:
-            new_replicas = current_replicas + 1
-            log_decision(f"[DECISION] High CPU detected. Gradually scaling up to {new_replicas} replicas.")
-            scale_replicas(new_replicas)
-
-        elif cpu_usage < 50 and current_replicas > MIN_REPLICAS:
-            new_replicas = current_replicas - 1
-            log_decision(f"[DECISION] Low CPU detected. Scaling down to {new_replicas} replicas to save cost.")
-            scale_replicas(new_replicas)
-
-        else:
-            log_decision("[DECISION] No scaling change needed.")
-
-        # Wait before next check
-        time.sleep(60)
+        cpu_percent, replicas = get_cpu_metrics(DEPLOYMENT)
+        log_with_timestamp(f"[METRIC] Current CPU: {cpu_percent}% | Replicas: {replicas}")
+        make_scaling_decision(cpu_percent, replicas)
+        time.sleep(10)
 
 if __name__ == "__main__":
     main()
