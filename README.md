@@ -14,14 +14,6 @@ This is not just a proof of concept. The patterns here can be deployed, adapted,
 
 ---
 
-## System Architecture
-
-![Architecture Diagram](./architecture-diagram.png)
-
-At the heart of the demo is a redundant, autonomous, and self-correcting design. Two identical deployments, blue and green, provide high availability. A central Kubernetes Service manages traffic routing and can instantly shift connections from one deployment to the other. The blue deployment is managed by a custom Python-based AI agent capable of predictive scaling, taking into account workload patterns, cost considerations, and business logic. In contrast, the green deployment uses Kubernetes’ Horizontal Pod Autoscaler, offering a reactive scaling model that responds to changes in CPU and memory usage. A dedicated failover watcher continuously monitors both environments and coordinates traffic switching when an unhealthy state is detected. This combination allows for immediate failover, proactive scaling decisions, and uninterrupted service delivery.
-
----
-
 ## What You Will Learn
 
 Through the exercises in this repository, you will explore how intelligent failover differs from traditional service switching, compare reactive autoscaling with AI-driven predictive scaling, and experiment with realistic failure simulations. You will also see how financial considerations can be integrated directly into scaling strategies, ensuring that infrastructure decisions balance cost and performance. The demo can be run entirely offline, enabling you to focus on the architectural and operational principles without external dependencies.

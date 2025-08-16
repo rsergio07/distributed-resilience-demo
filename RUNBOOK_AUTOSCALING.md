@@ -4,7 +4,20 @@ This runbook demonstrates the **next generation of intelligent scaling** - movin
 
 In this setup, **green deployment** uses traditional Kubernetes HPA scaling, while **blue deployment** is controlled by our intelligent AI agent. This side-by-side comparison shows the evolution from reactive scaling to predictive, context-aware operations.
 
------
+---
+
+## Intelligent Architecture
+
+![Intelligent Architecture](./docs/architecture-intelligent.svg)
+
+The intelligent failover approach leverages AI reasoning to make predictive, context-aware decisions about scaling and failover. This next-generation architecture anticipates issues before they impact users through:
+
+**Core Pattern:** AI-powered failover agent that analyzes cluster metrics, application performance, and business context to make proactive scaling and routing decisions. The agent uses natural language reasoning to weigh factors like user impact, cost optimization, and service level objectives.
+**Scaling Strategy:** Predictive scaling based on pattern recognition, seasonal trends, and real-time analysis. The AI agent can pre-scale resources before anticipated load spikes and initiate graceful failovers before degradation affects users.
+**Best For:** Production environments with variable traffic patterns, cost-sensitive operations requiring intelligent resource optimization, and teams wanting to reduce manual intervention in scaling decisions.
+**Trade-offs:** Increased complexity requiring OpenAI API integration, dependency on external reasoning service, and need for careful monitoring of AI decision quality during initial deployment.
+
+---
 
 ## Step 1 – Start with a Clean Slate
 
