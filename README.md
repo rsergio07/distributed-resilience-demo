@@ -14,14 +14,6 @@ This is not just a proof of concept. The patterns here can be deployed, adapted,
 
 ---
 
-## System Architecture
-
-![Architecture Diagram](./architecture-diagram.png)
-
-At the heart of the demo is a redundant, autonomous, and self-correcting design. Two identical deployments, blue and green, provide high availability. A central Kubernetes Service manages traffic routing and can instantly shift connections from one deployment to the other. The traditional approach uses Kubernetes' Horizontal Pod Autoscaler for reactive scaling, while the advanced scenario introduces AI agents capable of predictive scaling, taking into account workload patterns, cost considerations, and business logic. A dedicated failover watcher continuously monitors both environments and coordinates traffic switching when an unhealthy state is detected. This combination allows for immediate failover, proactive scaling decisions, and uninterrupted service delivery.
-
----
-
 ## What You Will Learn
 
 Through the exercises in this repository, you will explore how intelligent failover differs from traditional service switching, compare reactive autoscaling with AI-driven predictive scaling, and experiment with realistic failure simulations. You will also see how financial considerations can be integrated directly into scaling strategies, ensuring that infrastructure decisions balance cost and performance. The demos can be run entirely offline, enabling you to focus on the architectural and operational principles without external dependencies.
@@ -142,7 +134,7 @@ By addressing these areas, the lab can evolve from a controlled demonstration in
 
 ## Additional Resources
 
-Beyond the runbooks, you will find a set of supporting tools and materials that make experimentation easier. Deployment and cleanup scripts automate environment setup and teardown, ensuring a consistent lab experience every time. The architecture diagram serves as a visual reference for the interactions between components, and offline mode enables the entire environment to run without external dependencies—ideal for controlled lab networks or training environments.
+Beyond the runbooks, you will find a set of supporting tools and materials that make experimentation easier. Deployment and cleanup scripts automate environment setup and teardown, ensuring a consistent lab experience every time. The architecture diagrams serve as visual references for the interactions between components, and offline mode enables the entire environment to run without external dependencies—ideal for controlled lab networks or training environments.
 
 For guidance on how to contribute improvements or suggest changes, see the [**Contributing Guidelines**](./CONTRIBUTING.md).
 For license terms and usage permissions, refer to the [**License**](./LICENSE.md).
