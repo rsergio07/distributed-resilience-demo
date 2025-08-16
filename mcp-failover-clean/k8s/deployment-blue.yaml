@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-blue
+  namespace: mcp-failover-clean
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+      color: blue
+  template:
+    metadata:
+      labels:
+        app: web
+        color: blue
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.25
+        ports:
+        - containerPort: 80
