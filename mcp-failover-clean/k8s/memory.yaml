@@ -1,0 +1,7 @@
+apiVersion: kagent.dev/v1alpha1
+kind: Memory
+metadata:
+  name: failover-memory
+  namespace: kagent
+spec:
+  backend: in-memory
