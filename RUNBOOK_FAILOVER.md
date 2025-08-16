@@ -6,6 +6,18 @@ We're using **two identical deployments** (blue and green) with intelligent traf
 
 ---
 
+## Traditional Architecture
+
+![Traditional Architecture](./docs/architecture-traditional.svg)
+
+The traditional resilience approach uses proven Kubernetes patterns with reactive scaling and health-based failover. This architecture provides reliable service continuity through:
+
+**Core Pattern:** Blue-green deployments with Horizontal Pod Autoscaler (HPA) managing each environment independently. A shell-based failover watcher continuously monitors pod health and readiness probes, switching traffic between deployments when failures are detected.
+**Scaling Strategy:** Reactive scaling triggered by CPU thresholds. When load increases, HPA adds pods; when failures occur, the watcher redirects traffic to the healthy deployment.
+**Best For:** Teams wanting battle-tested reliability patterns, environments where predictable scaling is sufficient, and scenarios where operational simplicity is prioritized over advanced optimization.
+**Trade-offs:** May experience brief service disruption during failover detection, scaling decisions are purely metric-based without business context, and recovery is reactive rather than preventive.
+
+---
 ## Step 1 – Start with a Clean Slate
 
 > **What I'm doing**: "First, let's ensure we have a completely clean environment. In production, you'd never do this, but for our demo, we want to start from a known good state."
