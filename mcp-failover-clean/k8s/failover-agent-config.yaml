@@ -12,7 +12,9 @@ data:
       "kagent_url": "http://kagent-controller.kagent.svc:8083",
       "agent_card": {
         "name": "failover-agent",
+        "description": "Agent that handles intelligent failover between blue/green.",
         "url": "http://failover-agent.kagent.svc:8080",
+        "version": "0.1.0",
         "capabilities": {
           "streaming": true,
           "stateTransitionHistory": true
@@ -21,8 +23,10 @@ data:
         "defaultOutputModes": ["text"],
         "skills": [
           {
+            "id": "analyze_scaling_needs",
             "name": "analyze_scaling_needs",
             "description": "Analyze scaling trends and suggest proactive failover.",
+            "tags": ["scaling", "analysis"],
             "parameters": {
               "service_url": "string",
               "time_horizon": "string",
@@ -30,18 +34,21 @@ data:
             }
           },
           {
+            "id": "trigger_failover",
             "name": "trigger_failover",
             "description": "Switch traffic from blue to green or vice versa.",
+            "tags": ["failover", "switching"],
             "parameters": {
               "target_color": "string"
             }
           }
         ]
       },
-      "name": "kagent__NS__failover_agent",
+      "name": "kagent/failover-agent",
       "model": {
         "model": "gpt-4o-mini",
         "type": "openai"
       },
-      "instruction": "You are a resilient failover demo agent. Your job is to test blue/green switching.\n"
+      "instruction": "You are a resilient failover demo agent. Your job is to test blue/green switching.\n",
+      "description": "This agent demonstrates AI-driven failover between blue/green deployments."
     }
