@@ -6,6 +6,18 @@ This runbook demonstrates the **next evolution of resilience patterns**—moving
 
 ---
 
+### **Intelligent Architecture**
+
+![Intelligent Architecture](./docs/architecture-intelligent.svg)
+
+The intelligent failover approach builds upon traditional resilience but introduces a new layer of autonomy and reasoning through **AI-driven decision-making**. In this design, the deployments are still blue and green, but their scaling and failover are coordinated by an **AI-powered failover agent**.
+
+The agent operates with context-aware intelligence: instead of reacting only to CPU spikes, it evaluates workload patterns, cost implications, and user impact before taking action. The agent is orchestrated by the **kagent controller**, which provides CRDs and lifecycle management, while **MCP servers** give the AI secure access to Kubernetes tools for real-time interaction. Finally, **OpenAI integration** supplies the reasoning engine that allows the system to make nuanced, human-like decisions.
+
+This architecture excels in scenarios where **proactive resilience** is critical. The system can anticipate scaling needs before thresholds are crossed, initiate failover before users notice disruption, and adapt strategies over time as it learns from patterns. The trade-off is complexity: deploying and operating this intelligent layer requires more moving parts and trust in the AI’s ability to balance performance, cost, and reliability.
+
+---
+
 ## The Evolution: From Reactive to Intelligent
 
 **Traditional Approach** (what you saw in the HPA runbook):

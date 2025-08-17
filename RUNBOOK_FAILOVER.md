@@ -6,16 +6,15 @@ We're using **two identical deployments** (blue and green) with intelligent traf
 
 ---
 
-## Traditional Architecture
+### **Traditional Architecture**
 
 ![Traditional Architecture](./docs/architecture-traditional.svg)
 
-The traditional resilience approach uses proven Kubernetes patterns with reactive scaling and health-based failover. This architecture provides reliable service continuity through:
+The traditional resilience approach relies on well-established Kubernetes mechanisms that have been proven in production environments for years. At its core, the system follows a **blue–green deployment model** where two environments exist side by side, with the **Horizontal Pod Autoscaler (HPA)** independently managing scaling in each. Scaling events are triggered reactively: when CPU usage rises, new pods are added; when demand falls, pods are removed.
 
-**Core Pattern:** Blue-green deployments with Horizontal Pod Autoscaler (HPA) managing each environment independently. A shell-based failover watcher continuously monitors pod health and readiness probes, switching traffic between deployments when failures are detected.
-**Scaling Strategy:** Reactive scaling triggered by CPU thresholds. When load increases, HPA adds pods; when failures occur, the watcher redirects traffic to the healthy deployment.
-**Best For:** Teams wanting battle-tested reliability patterns, environments where predictable scaling is sufficient, and scenarios where operational simplicity is prioritized over advanced optimization.
-**Trade-offs:** May experience brief service disruption during failover detection, scaling decisions are purely metric-based without business context, and recovery is reactive rather than preventive.
+Resilience is ensured through a **shell-based failover watcher**. This lightweight process continuously checks pod health and readiness probes, redirecting traffic between blue and green as needed. When failures are detected, service continuity is preserved by shifting connections to the healthy deployment.
+
+This pattern is best suited for teams seeking **battle-tested reliability and operational simplicity**. It ensures robust service availability under load but does so with a trade-off: scaling and failover decisions are reactive, based solely on technical metrics. This means there may be brief moments of disruption while failures are detected, and no consideration is given to business impact or optimization beyond CPU thresholds.
 
 ---
 ## Step 1 – Start with a Clean Slate

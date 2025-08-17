@@ -20,69 +20,28 @@ Through the exercises in this repository, you will explore how intelligent failo
 
 ---
 
-## Quick Start
+## Getting Started
 
-The environment can be deployed in a few straightforward steps. First, clone this repository and move into its directory:
+First, fork or clone this repository and move into its directory:
 
 ```bash
 git clone https://github.com/rsergio07/distributed-resilience-demo.git
 cd distributed-resilience-demo
 ```
 
-If you have previously deployed any version of the demo, clean the environment before starting fresh:
-
-```bash
-./scripts/cleanup.sh --cluster
-```
-
-Deploy the traditional resilience demo using:
-
-```bash
-./scripts/deploy-offline.sh
-```
-
-Or jump directly to the intelligent failover demo:
-
-```bash
-./mcp-failover-clean/scripts/setup-mcp-failover-clean.sh
-```
-
-Once the scripts complete, verify the environment by listing the pods in the appropriate namespace:
-
-```bash
-# For traditional demo
-kubectl -n distributed-resilience get pods
-
-# For intelligent failover demo  
-kubectl -n mcp-failover-clean get pods
-kubectl -n kagent get agents
-```
-
-When the system is ready, select a scenario from the runbooks and begin your exploration.
+From there, you can choose one of the two runbooks to explore: the **traditional resilience demo** or the **intelligent failover demo**. Each runbook guides you step by step through setup, monitoring, and experiments.
 
 ---
 
 ## Learning Path: From Reactive to Intelligent
 
-The demo is designed as a progressive learning experience, moving from traditional patterns to cutting-edge AI-driven operations:
+This demo is designed as a journey, starting with familiar resilience techniques and advancing toward cutting-edge AI-driven operations.
 
-### 1. **Traditional Resilience Patterns**
-Start with the [**Blue/Green Resilience with HPA + Auto-Failover**](./RUNBOOK_FAILOVER.md) scenario, where you'll witness reactive autoscaling and rule-based failover in action. This foundation chapter shows how Kubernetes can scale workloads under varying demand and redirect traffic seamlessly during an outage using established patterns. You'll see:
+You begin with the [**Blue/Green Resilience with HPA + Auto-Failover**](./RUNBOOK_FAILOVER.md) scenario. In this stage, Kubernetes demonstrates its traditional strengths: horizontal pod autoscaling that reacts to CPU thresholds, blue/green deployments that provide redundancy, and a failover watcher that instantly redirects traffic when one side fails. You’ll see how these established patterns deliver reactive automation and reliable recovery under pressure.
 
-- **Horizontal Pod Autoscaling** based on CPU thresholds
-- **Blue/green deployments** with instant traffic switching  
-- **Custom failover watchers** that monitor and redirect traffic
-- **Load testing** and failure simulation under realistic conditions
+Once you understand that foundation, you can progress to the [**Intelligent Failover with AI Agents**](./RUNBOOK_INTELLIGENT_FAILOVER.md) scenario. Here, the system evolves beyond rules and thresholds. An AI operations agent monitors patterns, predicts scaling needs before they arise, and balances performance, cost, and user experience. Failover decisions become contextual—shaped by business impact as much as technical health—and the system learns from each scenario to optimize future behavior.
 
-### 2. **AI-Enhanced Operations**
-Progress to the [**Intelligent Failover with AI Agents**](./RUNBOOK_INTELLIGENT_FAILOVER.md) scenario, which demonstrates the future of infrastructure operations. Here you'll see how AI agents move beyond reactive automation to provide contextual, predictive, and learning-based decision making. You'll explore:
-
-- **Predictive scaling** that prevents problems before they occur
-- **Context-aware failover** considering business impact, not just technical health
-- **Multi-dimensional optimization** balancing performance, cost, and reliability
-- **Continuous learning** where agents adapt and improve over time
-
-This progression shows the evolution from **reactive automation** to **proactive intelligence**, demonstrating how modern infrastructure can think, learn, and optimize autonomously.
+Together, these two runbooks reveal the shift from **reactive automation** to **proactive intelligence**, showing how modern infrastructure can adapt, optimize, and make decisions in ways that go far beyond static configurations.
 
 ---
 

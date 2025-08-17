@@ -3,3 +3,4 @@ images/*.tar
 # macOS cruft
 .DS_Storeagentic_ai_decisions.log
 bin/
+.DS_Store

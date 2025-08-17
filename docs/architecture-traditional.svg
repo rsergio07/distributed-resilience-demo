@@ -1,51 +1,51 @@
 <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
   <!-- Background -->
-  <rect width="800" height="600" fill="#f8f9fa"/>
+  <rect width="800" height="600" fill="#f8f9fa"></rect>
   
   <!-- Title -->
   <text x="400" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#2c3e50">Traditional Resilience Architecture</text>
   
   <!-- Load Test Generator -->
-  <rect x="350" y="60" width="100" height="60" rx="8" fill="#e74c3c" stroke="#c0392b" stroke-width="2"/>
+  <rect x="350" y="60" width="100" height="60" rx="8" fill="#e74c3c" stroke="#c0392b" stroke-width="2"></rect>
   <text x="400" y="85" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Load Test</text>
   <text x="400" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Generator</text>
   
   <!-- Arrow from Load Test to Service -->
-  <path d="M400 120 L400 150" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M400 120 L400 150" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)"></path>
   
   <!-- Service -->
-  <rect x="320" y="160" width="160" height="60" rx="8" fill="#3498db" stroke="#2980b9" stroke-width="2"/>
+  <rect x="320" y="160" width="160" height="60" rx="8" fill="#9b59b6" stroke="#8e44ad" stroke-width="2"></rect>
   <text x="400" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">Service</text>
   <text x="400" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">(NodePort 30080)</text>
   
   <!-- Arrows from Service to Deployments -->
-  <path d="M360 220 L220 280" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)"/>
-  <path d="M440 220 L580 280" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M360 220 L220 280" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)"></path>
+  <path d="M440 220 L580 280" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)"></path>
   
   <!-- Blue Deployment -->
-  <rect x="120" y="290" width="200" height="80" rx="8" fill="#27ae60" stroke="#229954" stroke-width="2"/>
+  <rect x="120" y="290" width="200" height="80" rx="8" fill="#3498db" stroke="#2980b9" stroke-width="2"></rect>
   <text x="220" y="315" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">Blue Deployment</text>
   <text x="220" y="335" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">Default Active</text>
   <text x="220" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">(HPA - CPU Based)</text>
   
   <!-- Green Deployment -->
-  <rect x="480" y="290" width="200" height="80" rx="8" fill="#f39c12" stroke="#e67e22" stroke-width="2"/>
+  <rect x="480" y="290" width="200" height="80" rx="8" fill="#27ae60" stroke="#229954" stroke-width="2"></rect>
   <text x="580" y="315" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">Green Deployment</text>
   <text x="580" y="335" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">Standby</text>
   <text x="580" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">(HPA - CPU Based)</text>
   
   <!-- Arrows from Deployments to Failover Watcher -->
-  <path d="M220 370 L350 450" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)"/>
-  <path d="M580 370 L450 450" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M220 370 L350 450" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)"></path>
+  <path d="M580 370 L450 450" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)"></path>
   
   <!-- Failover Watcher -->
-  <rect x="300" y="460" width="200" height="80" rx="8" fill="#9b59b6" stroke="#8e44ad" stroke-width="2"/>
+  <rect x="300" y="460" width="200" height="80" rx="8" fill="#f39c12" stroke="#e67e22" stroke-width="2"></rect>
   <text x="400" y="485" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">Failover Watcher</text>
   <text x="400" y="505" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">Shell Script</text>
   <text x="400" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">Health Monitoring</text>
   
   <!-- Legend -->
-  <rect x="50" y="450" width="200" height="120" rx="8" fill="white" stroke="#bdc3c7" stroke-width="1"/>
+  <rect x="50" y="450" width="200" height="120" rx="8" fill="white" stroke="#bdc3c7" stroke-width="1"></rect>
   <text x="60" y="470" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2c3e50">Key Features:</text>
   <text x="60" y="490" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">• Reactive scaling (HPA)</text>
   <text x="60" y="505" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">• Health-based failover</text>
@@ -56,7 +56,7 @@
   <!-- Arrow marker definition -->
   <defs>
     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#2c3e50"/>
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2c3e50"></polygon>
     </marker>
   </defs>
 </svg>
