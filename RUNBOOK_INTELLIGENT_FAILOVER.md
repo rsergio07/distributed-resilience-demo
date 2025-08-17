@@ -140,7 +140,7 @@ watch -n 3 'kubectl get svc web -n mcp-failover-clean -o jsonpath="{.spec.select
 DEMO_URL=$(minikube service web -n mcp-failover-clean --url)
 
 # Ask the agent to analyze trends (this is when the magic happens)
-kubectl exec -n kagent deployment/failover-agent -c main -- curl -X POST localhost:8080/analyze \
+kubectl exec -n kagent deployment/failover-agent -c kagent -- curl -X POST localhost:8080/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "task": "analyze_scaling_needs",
