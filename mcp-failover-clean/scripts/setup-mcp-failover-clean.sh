@@ -40,72 +40,8 @@ kubectl create secret generic openai-secret -n kagent \
   --from-literal=api-key="${OPENAI_API_KEY:-replace_me}"
 
 echo "[+] Applying kagent configurations"
-
-# ModelConfig
-cat > ./mcp-failover-clean/k8s/modelconfig.yaml <<'EOF'
-apiVersion: kagent.dev/v1alpha1
-kind: ModelConfig
-metadata:
-  name: openai-gpt4
-  namespace: kagent
-spec:
-  provider: OpenAI
-  model: gpt-4o-mini
-  apiKeySecretRef: openai-secret
-  apiKeySecretKey: api-key
-EOF
-
-# MCPServer
-cat > ./mcp-failover-clean/k8s/mcpserver.yaml <<'EOF'
-apiVersion: kagent.dev/v1alpha1
-kind: MCPServer
-metadata:
-  name: k8s-mcp
-  namespace: kagent
-spec:
-  transportType: http
-  httpTransport:
-    path: /mcp
-    targetPort: 8080
-  deployment:
-    image: ghcr.io/kagent-dev/mcp-k8s:latest
-    port: 8080
-EOF
-
-# Agent with explicit skills
-cat > ./mcp-failover-clean/k8s/agent.yaml <<'EOF'
-apiVersion: kagent.dev/v1alpha1
-kind: Agent
-metadata:
-  name: failover-agent
-  namespace: kagent
-spec:
-  modelConfig: openai-gpt4
-  systemMessage: |
-    You are a resilient failover demo agent. Your job is to test blue/green switching.
-  tools:
-    - type: McpServer
-      mcpServer:
-        toolServer: k8s-mcp
-        toolNames: []
-  skills:
-    - name: analyze_scaling_needs
-      description: Analyze scaling trends and suggest proactive failover.
-      parameters:
-        service_url: string
-        time_horizon: string
-        business_context: string
-    - name: trigger_failover
-      description: Switch traffic from blue to green or vice versa.
-      parameters:
-        target_color: string
-EOF
-
-# Apply all resources
-kubectl apply -f ./mcp-failover-clean/k8s/modelconfig.yaml
-kubectl apply -f ./mcp-failover-clean/k8s/mcpserver.yaml
-kubectl apply -f ./mcp-failover-clean/k8s/agent.yaml
-kubectl apply -f ./mcp-failover-clean/k8s/failover-agent-config.yaml
+# Apply all resources from the k8s directory directly
+kubectl apply -f ./mcp-failover-clean/k8s/
 
 echo "[+] All resources applied successfully!"
 echo "[+] Demo agent is ready in namespace kagent."
