@@ -3,5 +3,4 @@ kind: Memory
 metadata:
   name: failover-memory
   namespace: kagent
-spec:
-  backend: in-memory
+spec: {}

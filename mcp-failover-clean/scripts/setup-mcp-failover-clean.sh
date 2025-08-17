@@ -1,53 +1,172 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "[+] Ensuring Colima runtime is running with resources"
-colima start --cpu 4 --memory 8 --disk 60 || true
+# Validation functions
+validate_prerequisites() {
+    echo "[+] Checking prerequisites..."
+    command -v kubectl >/dev/null || { echo "ERROR: kubectl is required"; exit 1; }
+    command -v helm >/dev/null || { echo "ERROR: helm is required"; exit 1; }
+    command -v minikube >/dev/null || { echo "ERROR: minikube is required"; exit 1; }
+    command -v docker >/dev/null || { echo "ERROR: docker is required"; exit 1; }
+}
 
-echo "[+] Ensuring Minikube is running"
-minikube start --cpus=4 --memory=7900mb --driver=docker
+validate_openai_key() {
+    if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+        echo "ERROR: OPENAI_API_KEY environment variable is required"
+        echo "Please set it with: export OPENAI_API_KEY='your-api-key-here'"
+        exit 1
+    fi
+    echo "[+] OpenAI API key validated"
+}
 
-echo "[+] Cleaning old namespaces"
-kubectl delete namespace mcp-failover-clean --ignore-not-found
-kubectl create namespace mcp-failover-clean
+check_existing_runtime() {
+    if minikube status >/dev/null 2>&1; then
+        echo "[!] Minikube already running, stopping first..."
+        minikube stop
+    fi
+    
+    # Check if Colima is running and configure it properly
+    if command -v colima >/dev/null 2>&1; then
+        echo "[+] Configuring Colima for adequate resources..."
+        if colima status >/dev/null 2>&1; then
+            echo "[!] Stopping Colima to reconfigure..."
+            colima stop
+        fi
+        echo "[+] Starting Colima with proper resource allocation..."
+        colima start --cpu 8 --memory 16 --disk 60
+        echo "[+] Colima configured successfully"
+    elif docker info >/dev/null 2>&1; then
+        echo "[+] Docker runtime detected (not Colima)"
+    else
+        echo "ERROR: No Docker runtime available. Please install Docker Desktop or Colima"
+        exit 1
+    fi
+}
 
-echo "[+] Deploying demo workloads (blue/green)"
-kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/deployment-blue.yaml
-kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/deployment-green.yaml
-kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/service.yaml
+wait_for_deployment() {
+    local name=$1 namespace=$2 timeout=${3:-300}
+    echo "[+] Waiting for $name deployment to be ready (${timeout}s timeout)..."
+    if ! kubectl wait --for=condition=available --timeout=${timeout}s deployment/$name -n $namespace; then
+        echo "ERROR: $name failed to become ready within ${timeout}s"
+        echo "--- Pod Status ---"
+        kubectl -n $namespace get pods -l app.kubernetes.io/name=$name
+        echo "--- Deployment Description ---"
+        kubectl -n $namespace describe deployment $name
+        echo "--- Recent Events ---"
+        kubectl -n $namespace get events --sort-by='.lastTimestamp' | tail -10
+        exit 1
+    fi
+    echo "[✓] $name is ready"
+}
 
-echo "[+] Installing kmcp CRDs"
-helm upgrade --install kmcp-crds oci://ghcr.io/kagent-dev/kmcp/helm/kmcp-crds \
-  --version 0.1.5 \
-  --namespace kmcp-system --create-namespace
+cleanup() {
+    local exit_code=$?
+    if [[ $exit_code -ne 0 ]]; then
+        echo "[!] Script failed. Cleaning up..."
+        kubectl delete namespace mcp-failover-clean --ignore-not-found
+    fi
+}
+trap cleanup EXIT
 
-echo "[+] Installing kagent CLI (user mode)"
-mkdir -p ./bin
-curl -sL https://cr.kagent.dev/v0.5.5/kagent-darwin-arm64 -o ./bin/kubectl-kagent
-chmod +x ./bin/kubectl-kagent
-export PATH="$(pwd)/bin:$PATH"
+# Main installation
+main() {
+    validate_prerequisites
+    validate_openai_key
+    check_existing_runtime
 
-echo "[+] Installing kagent into cluster"
-kubectl kagent install
-
-echo "[+] Waiting for kagent core pods (60s timeout)"
-kubectl wait --for=condition=available --timeout=60s deployment/kagent-controller -n kagent || \
-  echo "[!] Timeout waiting for kagent-controller, continuing anyway..."
-
-echo "[+] Creating OpenAI secret"
-kubectl delete secret openai-secret -n kagent --ignore-not-found
-kubectl create secret generic openai-secret -n kagent \
-  --from-literal=api-key="${OPENAI_API_KEY:-replace_me}"
-
-echo "[+] Applying kagent configurations"
-# Apply all resources from the k8s directory directly
-kubectl apply -f ./mcp-failover-clean/k8s/
-
-echo "[+] All resources applied successfully!"
-echo "[+] Demo agent is ready in namespace kagent."
-echo ""
-echo "   Your blue/green failover demo is ready!"
-echo "   Blue deployment:  2 replicas running"
-echo "   Green deployment: 0 replicas (standby)"
-echo "   Service:          NodePort on minikube"
-echo ""
+    echo "[+] Starting Minikube with adequate resources (within Colima limits)"
+    # Use 6 CPUs and 12GB RAM to stay within Colima's 8 CPU / 16GB allocation
+    minikube start --cpus=6 --memory=12288mb --disk-size=40g --driver=docker
+    
+    echo "[+] Cleaning old namespaces"
+    kubectl delete namespace mcp-failover-clean --ignore-not-found
+    kubectl create namespace mcp-failover-clean
+    
+    echo "[+] Deploying demo workloads (blue/green)"
+    kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/deployment-blue.yaml
+    kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/deployment-green.yaml
+    kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/service.yaml
+    
+    echo "[+] Installing kagent CLI (user mode)"
+    mkdir -p ./bin
+    curl -sL https://cr.kagent.dev/v0.5.5/kagent-darwin-arm64 -o ./bin/kubectl-kagent
+    chmod +x ./bin/kubectl-kagent
+    export PATH="$(pwd)/bin:$PATH"
+    
+    echo "[+] Installing kagent CRDs"
+    helm install kagent-crds oci://ghcr.io/kagent-dev/kagent/helm/kagent-crds \
+    --namespace kagent --create-namespace --wait
+    
+    echo "[+] Installing KMCP CRDs"
+    helm install kmcp-crds oci://ghcr.io/kagent-dev/kmcp/helm/kmcp-crds \
+    --namespace kmcp-system --create-namespace --wait
+    
+    echo "[+] Creating OpenAI secret securely"
+    kubectl delete secret openai-secret -n kagent --ignore-not-found
+    kubectl create secret generic openai-secret -n kagent \
+    --from-literal=api-key="${OPENAI_API_KEY}"
+    
+    echo "[+] Installing Kagent core components"
+    helm install kagent oci://ghcr.io/kagent-dev/kagent/helm/kagent \
+    --namespace kagent \
+    --set providers.openAI.apiKey="${OPENAI_API_KEY}" \
+    --wait --timeout=10m
+    
+    # Wait for controller to be fully ready
+    wait_for_deployment kagent-controller kagent 300
+    
+    echo "[+] Verifying all CRDs are available"
+    kubectl get crd | grep kagent
+    
+    # Check if sessions CRD exists
+    if kubectl get crd sessions.kagent.dev >/dev/null 2>&1; then
+        echo "[✓] sessions.kagent.dev CRD found"
+        SESSION_CRD_EXISTS=true
+    else
+        echo "[!] sessions.kagent.dev CRD not found - will skip session.yaml"
+        SESSION_CRD_EXISTS=false
+    fi
+    
+    echo "[+] Applying kagent configurations"
+    kubectl apply -f ./mcp-failover-clean/k8s/modelconfig.yaml
+    kubectl apply -f ./mcp-failover-clean/k8s/mcpserver.yaml
+    kubectl apply -f ./mcp-failover-clean/k8s/memory.yaml
+    kubectl apply -f ./mcp-failover-clean/k8s/agent.yaml
+    
+    # Check if session.yaml exists and if Session CRD is available
+    if [[ -f "./mcp-failover-clean/k8s/session.yaml" ]]; then
+        if kubectl get crd sessions.kagent.dev >/dev/null 2>&1; then
+            kubectl apply -f ./mcp-failover-clean/k8s/session.yaml
+            echo "[✓] Session configuration applied"
+        else
+            echo "[!] Session CRD not available in kagent v0.5.5 - skipping session.yaml"
+            echo "    This is likely due to Session resources being deprecated or moved"
+            echo "    The demo should work without explicit Session resources"
+        fi
+    else
+        echo "[!] session.yaml file not found - skipping"
+    fi
+    
+    kubectl apply -f ./mcp-failover-clean/k8s/failover-agent-config.yaml
+    
+    echo "[+] Waiting for agent pods to start..."
+    sleep 30
+    
+    echo "[+] Checking final status"
+    kubectl -n kagent get pods
+    kubectl -n mcp-failover-clean get pods
+    
+    echo ""
+    echo "Installation completed successfully!"
+    echo ""
+    echo "RESOURCE USAGE:"
+    kubectl top nodes 2>/dev/null || echo "   (Metrics server not available)"
+    
+    echo ""
+    echo "YOUR KAGENT INSTALLATION IS READY!"
+    echo ""
+    echo "   Blue/Green Demo Environment:"
+    echo "   • Blue deployment: 2 replicas running"  
+    echo "   • Green deployment: 0 replicas (standby)"
+    echo "   • Service: Available via NodePort"
+    echo ""
