@@ -72,7 +72,7 @@ spec:
     port: 8080
 EOF
 
-# Agent (NO MEMORY - Memory only supports Pinecone, not in-memory)
+# Agent with explicit skills
 cat > ./mcp-failover-clean/k8s/agent.yaml <<'EOF'
 apiVersion: kagent.dev/v1alpha1
 kind: Agent
@@ -88,11 +88,24 @@ spec:
       mcpServer:
         toolServer: k8s-mcp
         toolNames: []
+  skills:
+    - name: analyze_scaling_needs
+      description: Analyze scaling trends and suggest proactive failover.
+      parameters:
+        service_url: string
+        time_horizon: string
+        business_context: string
+    - name: trigger_failover
+      description: Switch traffic from blue to green or vice versa.
+      parameters:
+        target_color: string
 EOF
 
+# Apply all resources
 kubectl apply -f ./mcp-failover-clean/k8s/modelconfig.yaml
 kubectl apply -f ./mcp-failover-clean/k8s/mcpserver.yaml
 kubectl apply -f ./mcp-failover-clean/k8s/agent.yaml
+kubectl apply -f ./mcp-failover-clean/k8s/failover-agent-config.yaml
 
 echo "[+] All resources applied successfully!"
 echo "[+] Demo agent is ready in namespace kagent."

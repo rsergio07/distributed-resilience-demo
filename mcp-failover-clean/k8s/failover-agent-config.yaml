@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: failover-agent
+  namespace: kagent
+  labels:
+    app: kagent
+    kagent: failover-agent
+data:
+  config.json: |
+    {
+      "kagent_url": "http://kagent-controller.kagent.svc:8083",
+      "agent_card": {
+        "name": "failover-agent",
+        "url": "http://failover-agent.kagent.svc:8080",
+        "capabilities": {
+          "streaming": true,
+          "stateTransitionHistory": true
+        },
+        "defaultInputModes": ["text"],
+        "defaultOutputModes": ["text"],
+        "skills": [
+          {
+            "name": "analyze_scaling_needs",
+            "description": "Analyze scaling trends and suggest proactive failover.",
+            "parameters": {
+              "service_url": "string",
+              "time_horizon": "string",
+              "business_context": "string"
+            }
+          },
+          {
+            "name": "trigger_failover",
+            "description": "Switch traffic from blue to green or vice versa.",
+            "parameters": {
+              "target_color": "string"
+            }
+          }
+        ]
+      },
+      "name": "kagent__NS__failover_agent",
+      "model": {
+        "model": "gpt-4o-mini",
+        "type": "openai"
+      },
+      "instruction": "You are a resilient failover demo agent. Your job is to test blue/green switching.\n"
+    }
