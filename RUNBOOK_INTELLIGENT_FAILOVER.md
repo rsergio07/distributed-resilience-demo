@@ -14,7 +14,7 @@ The intelligent failover approach builds upon traditional resilience but introdu
 
 The agent operates with context-aware intelligence: instead of reacting only to CPU spikes, it evaluates workload patterns, cost implications, and user impact before taking action. The agent is orchestrated by the **kagent controller**, which provides CRDs and lifecycle management, while **MCP servers** give the AI secure access to Kubernetes tools for real-time interaction. Finally, **OpenAI integration** supplies the reasoning engine that allows the system to make nuanced, human-like decisions.
 
-This architecture excels in scenarios where **proactive resilience** is critical. The system can anticipate scaling needs before thresholds are crossed, initiate failover before users notice disruption, and adapt strategies over time as it learns from patterns. The trade-off is complexity: deploying and operating this intelligent layer requires more moving parts and trust in the AI’s ability to balance performance, cost, and reliability.
+This architecture excels in scenarios where **proactive resilience** is critical. The system can anticipate scaling needs before thresholds are crossed, initiate failover before users notice disruption, and adapt strategies over time as it learns from patterns. The trade-off is complexity: deploying and operating this intelligent layer requires more moving parts and trust in the AI's ability to balance performance, cost, and reliability.
 
 ---
 
@@ -26,9 +26,9 @@ This architecture excels in scenarios where **proactive resilience** is critical
 - Same behavior every time, regardless of context
 
 **Intelligent Approach** (what we'll demonstrate here):
-- AI agent predicts load and scales proactively
+- AI agent predicts load and scales proactively when queried
 - Context-aware failover considering business impact
-- Continuous learning and optimization
+- On-demand analysis and optimization through API calls
 
 ---
 
@@ -64,7 +64,7 @@ This architecture excels in scenarios where **proactive resilience** is critical
 
 **Expected output:**
 ```
-🎯 Your blue/green failover demo is ready!
+   Your blue/green failover demo is ready!
    Blue deployment:  2 replicas running
    Green deployment: 0 replicas (standby)
    Service:          NodePort on minikube
@@ -77,7 +77,10 @@ This architecture excels in scenarios where **proactive resilience** is critical
 > **What I'm doing**: "Let's verify our AI agent is operational and understand what makes it different from traditional automation."
 
 ```bash
-# Check agent status
+# Wait until the failover-agent pod is ready
+kubectl wait --for=condition=Ready pod -l kagent=failover-agent -n kagent --timeout=90s
+
+# Confirm agent status
 kubectl get agents -n kagent
 
 # Examine the agent configuration
@@ -95,16 +98,17 @@ failover-agent   openai-gpt4   True    True
 - **Multi-factor analysis**: Considers CPU, memory, errors, latency, cost
 - **Pattern recognition**: Learns from historical data
 - **Context awareness**: Makes different decisions based on time, load patterns, business context
+- **On-demand intelligence**: Responds to API queries with sophisticated analysis
 
 ---
 
 ## Step 4 – Set Up Intelligent Monitoring
 
-> **What I'm doing**: "Instead of watching simple metrics, let's observe how our AI agent analyzes and reasons about system state."
+> **What I'm doing**: "Instead of watching simple metrics, let's observe how our AI agent analyzes and reasons about system state when we ask it to."
 
 **Terminal Window 1: Agent Decision Log**
 ```bash
-kubectl logs -f deployment/failover-agent -n kagent
+kubectl logs -f deployment/failover-agent -n kagent | grep -v "GET /health"
 ```
 
 **Terminal Window 2: Traditional Pod Status** 
@@ -117,25 +121,25 @@ kubectl get pods -n mcp-failover-clean -w
 watch -n 3 'kubectl get svc web -n mcp-failover-clean -o jsonpath="{.spec.selector}" | jq'
 ```
 
-> **What I'm explaining**: "Notice we still monitor the same infrastructure, but now we also see the agent's reasoning process. It's not just 'CPU high, scale up'—it's 'CPU trending up, response time degrading, user complaints increasing, recommend gradual blue-to-green traffic shift.'"
+> **What I'm explaining**: "Notice the agent only shows health checks initially. The real intelligence comes when we make API requests for analysis. Unlike traditional monitoring that constantly reacts, our AI agent provides on-demand intelligence."
 
 ---
 
 ## Step 5 – Demonstrate Predictive Scaling
 
-> **What I'm doing**: "Traditional HPA waits for problems. Our agent predicts them. Let's simulate a scenario where the agent scales resources before issues occur."
+> **What I'm doing**: "Traditional HPA waits for problems. Our agent predicts them when asked. Let's create changing conditions and then query the agent for intelligent analysis."
 
 **Create a gradual load pattern:**
 ```bash
-./scripts/gradual-load-test.sh 300 &
+./mcp-failover-clean/scripts/gradual-load-test.sh 300 &
 ```
 
-**Query the agent for its analysis:**
+**Wait 2-3 minutes for load patterns to develop, then query the agent:**
 ```bash
 # Get the service URL first
 DEMO_URL=$(minikube service web -n mcp-failover-clean --url)
 
-# Ask the agent to analyze trends
+# Ask the agent to analyze trends (this is when the magic happens)
 kubectl exec -n kagent deployment/failover-agent -c main -- curl -X POST localhost:8080/analyze \
   -H "Content-Type: application/json" \
   -d '{
@@ -149,17 +153,26 @@ kubectl exec -n kagent deployment/failover-agent -c main -- curl -X POST localho
 ```
 
 **What the agent might report:**
-```
-[agent] Analyzing traffic patterns...
-[agent] Detected 15% increase in request rate over last 3 minutes
-[agent] Response time stable at 45ms but trending upward
-[agent] Memory utilization: 34% (within normal range)
-[agent] Prediction: 70% chance of CPU spike in next 5-8 minutes
-[agent] Recommendation: Preemptive scaling of blue deployment
-[agent] Executing gradual scale-up...
+```json
+{
+  "analysis": "Traffic pattern shows 15% increase over last 3 minutes",
+  "current_metrics": {
+    "response_time": "45ms trending upward",
+    "cpu_utilization": "34% but accelerating",
+    "memory_utilization": "within normal range"
+  },
+  "prediction": "70% chance of CPU spike in next 5-8 minutes",
+  "recommendation": "Preemptive scaling of blue deployment",
+  "reasoning": "Prevents performance degradation rather than reacting to it"
+}
 ```
 
-> **Key insight**: "See how it's not just reacting to current metrics, but analyzing trends and predicting future needs. This prevents performance degradation instead of responding to it."
+> **Key insight**: "See how the agent doesn't automatically react—it provides intelligent analysis when asked. This is on-demand intelligence, not constant automation."
+
+**Monitor the agent logs** to see detailed reasoning:
+```bash
+kubectl logs deployment/failover-agent -n kagent --tail=20
+```
 
 ---
 
@@ -182,6 +195,9 @@ kubectl patch deployment web-blue -n mcp-failover-clean -p '{
     }
   }
 }'
+
+# Wait for pods to restart with new config
+kubectl rollout status deployment/web-blue -n mcp-failover-clean
 ```
 
 **Ask the agent to evaluate the situation:**
@@ -195,17 +211,32 @@ kubectl exec -n kagent deployment/failover-agent -c main -- curl -X POST localho
   }'
 ```
 
-**Agent's intelligent analysis:**
+**Expected intelligent analysis:**
+```json
+{
+  "assessment": {
+    "blue": {
+      "cpu": "23%",
+      "memory": "145MB", 
+      "response_time": "180ms",
+      "error_rate": "0.2%",
+      "status": "degraded_performance"
+    },
+    "green": {
+      "cpu": "12%",
+      "memory": "132MB",
+      "response_time": "45ms", 
+      "error_rate": "0.0%",
+      "status": "optimal"
+    }
+  },
+  "recommendation": "Gradual traffic shift (30% to green)",
+  "business_impact": "12% improvement in user satisfaction",
+  "cost_impact": "Minimal (+$2.3/day)"
+}
 ```
-[agent] Health assessment results:
-[agent] Blue: CPU 23%, Memory 145MB, Avg Response: 180ms, Error Rate: 0.2%
-[agent] Green: CPU 12%, Memory 132MB, Avg Response: 45ms, Error Rate: 0.0%
-[agent] Analysis: Blue showing performance degradation but within acceptable thresholds
-[agent] Recommendation: Gradual traffic shift (30% to green) to improve user experience
-[agent] Business impact: Estimated 12% improvement in user satisfaction
-[agent] Cost impact: Minimal (+$2.3/day)
-[agent] Executing intelligent load balancing...
-```
+
+**Watch the agent logs** to see the reasoning process in action.
 
 ---
 
@@ -231,6 +262,9 @@ kubectl patch deployment web-blue -n mcp-failover-clean -p '{
     }
   }
 }'
+
+# Wait for rollout
+kubectl rollout status deployment/web-blue -n mcp-failover-clean
 ```
 
 **Agent's contextual evaluation:**
@@ -248,27 +282,27 @@ kubectl exec -n kagent deployment/failover-agent -c main -- curl -X POST localho
   }'
 ```
 
-**Intelligent decision making:**
-```
-[agent] Failover Assessment Report:
-[agent] ================================
-[agent] Blue Status: Pods healthy, but UX degrading
-[agent] - Response time: 340ms (baseline: 50ms)
-[agent] - Error rate: 4.8% (SLA breach at 5%)
-[agent] - User impact: HIGH (affects 1,200+ active sessions)
-[agent] 
-[agent] Green Status: Ready and optimal
-[agent] - Capacity available: 85%
-[agent] - Performance baseline: EXCELLENT
-[agent] 
-[agent] Decision Matrix:
-[agent] - Technical health: Blue=OK, Green=EXCELLENT
-[agent] - User experience: Blue=POOR, Green=OPTIMAL
-[agent] - Business impact: HIGH if no action taken
-[agent] - Failover risk: LOW (green proven stable)
-[agent] 
-[agent] RECOMMENDATION: Immediate traffic switch to green
-[agent] Executing failover in 3... 2... 1...
+**Expected intelligent decision making:**
+```json
+{
+  "failover_assessment": {
+    "blue_status": "Pods healthy, but UX degrading",
+    "metrics": {
+      "response_time": "340ms (baseline: 50ms)",
+      "error_rate": "4.8% (SLA breach at 5%)",
+      "user_impact": "HIGH (affects 1,200+ active sessions)"
+    },
+    "green_status": "Ready and optimal",
+    "decision_matrix": {
+      "technical_health": "Blue=OK, Green=EXCELLENT",
+      "user_experience": "Blue=POOR, Green=OPTIMAL", 
+      "business_impact": "HIGH if no action taken",
+      "failover_risk": "LOW (green proven stable)"
+    },
+    "recommendation": "Immediate traffic switch to green",
+    "execution": "Failover initiated"
+  }
+}
 ```
 
 ---
@@ -277,7 +311,7 @@ kubectl exec -n kagent deployment/failover-agent -c main -- curl -X POST localho
 
 > **What I'm doing**: "Here's where AI really shines—optimizing multiple constraints simultaneously. Let's give our agent a complex challenge that balances performance, cost, and reliability."
 
-**Present the agent with a optimization challenge:**
+**Present the agent with an optimization challenge:**
 ```bash
 kubectl exec -n kagent deployment/failover-agent -c main -- curl -X POST localhost:8080/optimize \
   -H "Content-Type: application/json" \
@@ -297,41 +331,41 @@ kubectl exec -n kagent deployment/failover-agent -c main -- curl -X POST localho
   }'
 ```
 
-**Agent's sophisticated optimization:**
-```
-[agent] Multi-Objective Optimization Analysis
-[agent] ==========================================
-[agent] 
-[agent] Current State:
-[agent] - Blue: 2 replicas, handling 100% traffic
-[agent] - Green: 1 replica, standby
-[agent] - Cost: $8.20/hour
-[agent] 
-[agent] Load Prediction (2x normal for 45min):
-[agent] - Expected RPS: 800 (current: 400)
-[agent] - Required capacity: 4-6 replicas total
-[agent] - Peak CPU: ~75% per pod
-[agent] 
-[agent] Optimization Strategy:
-[agent] 1. Pre-scale green to 3 replicas (cost: +$4.50/hr)
-[agent] 2. Gradual traffic split 60% green, 40% blue
-[agent] 3. Scale blue to 2 replicas (adequate for reduced load)
-[agent] 4. Monitor and adjust every 30 seconds
-[agent] 
-[agent] Predicted Outcomes:
-[agent] ✅ Response time: 68ms (target: <100ms)
-[agent] ✅ Error rate: 0.3% (target: <1%)
-[agent] ✅ Availability: 99.97% (target: >99.9%)
-[agent] ✅ Cost: $11.80/hr (budget: $12.50/hr)
-[agent] 
-[agent] Executing optimization plan...
+**Expected sophisticated optimization:**
+```json
+{
+  "optimization_analysis": {
+    "current_state": {
+      "blue": "2 replicas, handling 100% traffic",
+      "green": "1 replica, standby",
+      "cost": "$8.20/hour"
+    },
+    "load_prediction": {
+      "expected_rps": "800 (current: 400)",
+      "required_capacity": "4-6 replicas total",
+      "peak_cpu": "~75% per pod"
+    },
+    "optimization_strategy": [
+      "Pre-scale green to 3 replicas (cost: +$4.50/hr)",
+      "Gradual traffic split 60% green, 40% blue", 
+      "Scale blue to 2 replicas (adequate for reduced load)",
+      "Monitor and adjust every 30 seconds"
+    ],
+    "predicted_outcomes": {
+      "response_time": "68ms (target: <100ms)",
+      "error_rate": "0.3% (target: <1%)",
+      "availability": "99.97% (target: >99.9%)",
+      "cost": "$11.80/hr (budget: $12.50/hr)"
+    }
+  }
+}
 ```
 
 ---
 
 ## Step 9 – Learning and Adaptation
 
-> **What I'm doing**: "Unlike static rules, our agent learns from each scenario. Let's see how it adapts its decision-making based on what it's observed."
+> **What I'm doing**: "Unlike static rules, our agent can reflect on what it's observed. Let's see how it summarizes its learning from this session."
 
 **Ask the agent about its learning:**
 ```bash
@@ -343,34 +377,60 @@ kubectl exec -n kagent deployment/failover-agent -c main -- curl -X POST localho
   }'
 ```
 
-**Agent's learning summary:**
-```
-[agent] Learning Summary - Demo Session
-[agent] ====================================
-[agent] 
-[agent] Patterns Identified:
-[agent] 1. Blue deployment shows 15% higher memory usage under load
-[agent] 2. Green consistently outperforms on response time (avg 18% faster)
-[agent] 3. Gradual traffic shifts cause less connection drops than instant switches
-[agent] 4. Pre-emptive scaling reduces user-facing issues by ~60%
-[agent] 
-[agent] Updated Decision Rules:
-[agent] - Prefer green for latency-sensitive workloads
-[agent] - Begin scaling at 35% CPU (not 50%) for better user experience  
-[agent] - Use 70/30 traffic splits instead of 50/50 for testing
-[agent] - Factor memory trends into scaling decisions (not just CPU)
-[agent] 
-[agent] Confidence Improvements:
-[agent] - Failover timing: 78% → 94%
-[agent] - Load prediction: 65% → 89%  
-[agent] - Cost optimization: 72% → 87%
-[agent]
-[agent] Next session will apply these learnings automatically.
+**Expected learning summary:**
+```json
+{
+  "learning_summary": {
+    "patterns_identified": [
+      "Blue deployment shows 15% higher memory usage under load",
+      "Green consistently outperforms on response time (avg 18% faster)",
+      "Gradual traffic shifts cause less connection drops than instant switches",
+      "Pre-emptive scaling reduces user-facing issues by ~60%"
+    ],
+    "updated_decision_rules": [
+      "Prefer green for latency-sensitive workloads",
+      "Begin scaling at 35% CPU (not 50%) for better user experience",
+      "Use 70/30 traffic splits instead of 50/50 for testing", 
+      "Factor memory trends into scaling decisions (not just CPU)"
+    ],
+    "confidence_improvements": {
+      "failover_timing": "78% → 94%",
+      "load_prediction": "65% → 89%",
+      "cost_optimization": "72% → 87%"
+    },
+    "note": "Next session will apply these learnings automatically"
+  }
+}
 ```
 
 ---
 
-## Step 10 – Cleanup and Reflection
+## Step 10 – Understanding the Demo Architecture
+
+> **What I'm doing**: "Let's examine what we actually built and how it differs from traditional approaches."
+
+**Inspect the AI infrastructure:**
+```bash
+# See all the AI agents running
+kubectl get agents -n kagent
+
+# Check agent services and endpoints
+kubectl get svc -n kagent
+
+# Look at the actual workload
+kubectl get all -n mcp-failover-clean
+```
+
+**Key architectural insights:**
+
+1. **On-Demand Intelligence**: The AI agents don't continuously monitor—they provide intelligent analysis when queried via API
+2. **Contextual Reasoning**: Each request can include business context, time sensitivity, and optimization goals
+3. **Multi-Agent System**: Different agents handle different aspects (networking, scaling, observability)
+4. **Learning Capability**: Agents can reflect on patterns and improve decision-making over time
+
+---
+
+## Step 11 – Cleanup and Reflection
 
 > **What I'm doing**: "Let's clean up our environment and reflect on what we've accomplished."
 
@@ -385,13 +445,13 @@ kubectl delete namespace kagent
 
 | **Aspect** | **Traditional HPA + Watcher** | **AI Agent** |
 |---|---|---|
-| **Decision Making** | Threshold-based rules | Contextual reasoning |
-| **Scaling Triggers** | React to current CPU | Predict future needs |
-| **Failover Logic** | Binary health checks | Multi-factor analysis |
+| **Decision Making** | Threshold-based rules | Contextual reasoning via API calls |
+| **Scaling Triggers** | React to current CPU | Predict future needs when asked |
+| **Failover Logic** | Binary health checks | Multi-factor analysis on demand |
 | **Optimization** | Single metric (CPU) | Balance performance, cost, reliability |
-| **Adaptation** | Static configuration | Continuous learning |
+| **Adaptation** | Static configuration | Learning from queried scenarios |
 | **Context Awareness** | None | Business impact, time of day, user patterns |
-| **Response Time** | Minutes (reactive) | Seconds (predictive) |
+| **Response Model** | Continuous monitoring | On-demand intelligence |
 
 ---
 
@@ -399,20 +459,20 @@ kubectl delete namespace kagent
 
 In this demo, we showcased **the future of infrastructure operations**:
 
-### **Predictive Operations**
-- Scaled resources before problems occurred
-- Prevented performance degradation instead of reacting to it
-- Used pattern recognition to anticipate needs
+### **On-Demand Intelligence**
+- AI agents provide sophisticated analysis when queried
+- No constant monitoring overhead—intelligence when you need it
+- API-driven decision making with rich context
 
 ### **Contextual Decision Making**  
 - Balanced technical health with business impact
 - Considered user experience, not just system metrics
 - Made nuanced decisions based on multiple factors
 
-### **Continuous Optimization**
-- Simultaneously optimized performance, cost, and reliability
-- Adapted strategies based on real-world observations
-- Learned from each scenario to improve future decisions
+### **Adaptive Learning**
+- Agents reflected on observed patterns
+- Updated decision rules based on real-world observations
+- Improved confidence in predictions over time
 
 ### **Business-Aligned Operations**
 - Prioritized user experience over technical simplicity
@@ -425,8 +485,8 @@ In this demo, we showcased **the future of infrastructure operations**:
 
 **Traditional Approach**: "When CPU > 50%, add more pods"
 
-**Intelligent Approach**: "Analyzing traffic patterns, response time trends, user behavior, cost implications, and business context to determine optimal resource allocation and routing strategy"
+**Intelligent Approach**: "When asked, analyze traffic patterns, response time trends, user behavior, cost implications, and business context to determine optimal resource allocation and routing strategy"
 
-This represents the evolution from **reactive automation** to **proactive intelligence**—systems that don't just follow rules, but understand context, learn from experience, and make decisions that align with business objectives.
+This represents the evolution from **reactive automation** to **on-demand intelligence**—systems that don't just follow rules, but provide sophisticated analysis when requested, understand context, learn from experience, and make decisions that align with business objectives.
 
-Your infrastructure doesn't just react anymore—**it thinks**.
+Your infrastructure doesn't just react anymore—**it thinks, but only when you ask it to**.
