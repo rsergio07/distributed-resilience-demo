@@ -48,7 +48,7 @@ This script sets up:
 * **kagent controller** to manage agents
 * **MCP servers** to let agents act on the cluster
 * The **failover-agent**, my intelligent operations agent
-* **Blue/green workloads**, just like before, but AI-managed
+* **Blue/green workloads**, running my resilience-demo app, just like before, but AI-managed
 * **OpenAI integration**, so my agent can reason
 
 When this finishes, I confirm that the blue deployment has 2 replicas running, green is on standby, and the service is exposed through Minikube.
@@ -117,7 +117,7 @@ This is **guided intelligence**. The agent doesn’t blindly act; it collaborate
 
 In my HPA demo, I stressed the blue deployment and waited for the autoscaler to add pods. Now, I simulate degradation but instead of just watching metrics, I ask the agent what I should do.
 
-I run:
+I run this patch against my resilience-demo app to simulate slow requests:
 
 ```bash
 kubectl patch deployment web-blue -n mcp-failover-clean -p '{
