@@ -6,8 +6,8 @@ metadata:
 spec:
   selector:
     app: web
-    color: blue
+    version: blue
   ports:
   - port: 80
-    targetPort: 80
+    targetPort: 8080
   type: NodePort

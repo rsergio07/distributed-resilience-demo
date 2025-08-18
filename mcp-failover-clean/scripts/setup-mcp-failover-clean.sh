@@ -82,6 +82,23 @@ main() {
     kubectl delete namespace mcp-failover-clean --ignore-not-found
     kubectl create namespace mcp-failover-clean
     
+    echo "[+] Ensuring resilience-demo image is available offline"
+    IMAGE_TAG="resilience-demo:1.1"
+    APP_TAR="images/resilience-demo_1.1.tar"
+
+    if docker image inspect "${IMAGE_TAG}" >/dev/null 2>&1; then
+        echo "[✓] Found ${IMAGE_TAG} in local Docker cache"
+    elif [[ -f "${APP_TAR}" ]]; then
+        echo "[+] Loading app image from TAR: ${APP_TAR}"
+        docker load -i "${APP_TAR}"
+    else
+        echo "[!] WARNING: App image ${IMAGE_TAG} not found and ${APP_TAR} missing"
+        echo "    The demo will attempt to pull the image from a registry (requires internet)"
+    fi
+
+    echo "[+] Preloading app image into Minikube"
+    minikube image load "${IMAGE_TAG}" || true
+    
     echo "[+] Deploying demo workloads (blue/green)"
     kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/deployment-blue.yaml
     kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/deployment-green.yaml
@@ -162,7 +179,7 @@ main() {
     echo "RESOURCE USAGE:"
     kubectl top nodes 2>/dev/null || echo "   (Metrics server not available)"
     
-    echo ""
+        echo ""
     echo "YOUR KAGENT INSTALLATION IS READY!"
     echo ""
     echo "   Blue/Green Demo Environment:"
@@ -170,3 +187,18 @@ main() {
     echo "   • Green deployment: 0 replicas (standby)"
     echo "   • Service: Available via NodePort"
     echo ""
+
+    echo "Service URL:"
+    APP_URL=$(minikube service web -n mcp-failover-clean --url)
+    echo "$APP_URL"
+    echo ""
+
+    # Automatically open the App in the default browser
+    open "$APP_URL" 2>/dev/null || xdg-open "$APP_URL" || echo "Please open manually: $APP_URL"
+
+    # Automatically open the Kagent dashboard in a new tab
+    echo "[+] Opening Kagent Dashboard..."
+    kagent dashboard &
+}
+
+main "$@"
