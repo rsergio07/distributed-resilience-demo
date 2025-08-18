@@ -13,7 +13,7 @@ metadata:
     meta.helm.sh/release-namespace: kagent
 spec:
   description: "A resilient failover demo agent for testing blue/green switching and deployment strategies."
-  modelConfig: default-model-config  # Changed from "openai-gpt4"
+  modelConfig: default-model-config
   systemMessage: |
     You are a resilient failover demo agent. Your job is to test blue/green switching.
     
@@ -29,12 +29,12 @@ spec:
   tools:
     - type: McpServer
       mcpServer:
-        toolServer: kagent-querydoc  # Changed from "k8s-mcp"
+        toolServer: kagent-querydoc
         toolNames:
           - query_documentation
     - type: McpServer
       mcpServer:
-        toolServer: kagent-tool-server  # Changed from "k8s-mcp"
+        toolServer: kagent-tool-server
         toolNames:
           - k8s_get_resources
           - k8s_describe_resource
@@ -48,7 +48,7 @@ spec:
           - k8s_label_resource
           - k8s_annotate_resource
 
-  a2aConfig:  # Added missing a2aConfig section
+  a2aConfig:
     skills:
       - id: blue-green-testing
         name: Blue/Green Deployment Testing
