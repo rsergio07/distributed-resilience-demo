@@ -73,6 +73,15 @@ Demo ready at http://192.168.49.2:30080
 
 ---
 
+***Note on Offline Images and Tags***
+
+For this demo we rely on a **prebuilt Docker image** that has been exported as a `.tar` archive and stored locally:
+This ensures the demo runs **without requiring an internet connection**, which is especially useful during live tech talks or in environments with unreliable WiFi.
+You may notice a difference between the tag used in the Dockerfile (`resilience-demo:1.0`) and the one used during deployment (`resilience-demo:1.1`). This is intentional — the `.tar` file represents a newer, frozen build created specifically for **offline demo use**.
+When running `deploy-offline.sh`, the script will automatically load the `.tar` image into Minikube if it’s not already available locally.
+
+---
+
 ## Step 2 – Open Your Observation Windows
 
 > **What I'm doing**: "Let's set up our monitoring. In production, you'd have fancy dashboards, but kubectl gives us everything we need to understand what's happening."
