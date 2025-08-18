@@ -103,7 +103,12 @@ main() {
     kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/deployment-blue.yaml
     kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/deployment-green.yaml
     kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/service.yaml
-    
+
+    echo "[setup] Installing Prometheus stack via Helm..."
+    helm install prom-stack prometheus-community/kube-prometheus-stack \
+    --namespace monitoring --create-namespace \
+    -f ./mcp-failover-clean/k8s/monitoring/values.yaml
+
     echo "[+] Installing kagent CLI (user mode)"
     mkdir -p ./bin
     curl -sL https://cr.kagent.dev/v0.5.5/kagent-darwin-arm64 -o ./bin/kubectl-kagent
