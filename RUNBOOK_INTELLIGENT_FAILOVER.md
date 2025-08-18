@@ -66,32 +66,37 @@ kubectl get pods -A
 The result shows:
 
 ```
-NAME                                             READY   STATUS    RESTARTS   AGE
-NAMESPACE            NAME                                            READY   STATUS    RESTARTS   AGE
-kagent               argo-rollouts-conversion-agent-b7b5898d-rllkr   1/1     Running   0          76s
-kagent               cilium-debug-agent-67c57f5d89-2ffnz             1/1     Running   0          76s
-kagent               cilium-manager-agent-647788775f-jg9h7           1/1     Running   0          76s
-kagent               cilium-policy-agent-6f79d95f4b-qtc2n            1/1     Running   0          75s
-kagent               failover-agent-6b5b486985-tzv65                 1/1     Running   0          68s
-kagent               helm-agent-6c98ffd768-ttjfl                     1/1     Running   0          75s
-kagent               istio-agent-789d7645b-5r96w                     1/1     Running   0          76s
-kagent               k8s-agent-7644f8f475-h45qb                      1/1     Running   0          76s
-kagent               kagent-controller-548bb77cb8-j729x              2/2     Running   0          2m23s
-kagent               kagent-querydoc-66bd88f7b-f47w7                 1/1     Running   0          2m23s
-kagent               kagent-tools-7dbf78b678-hrtgs                   1/1     Running   0          2m23s
-kagent               kagent-ui-8648c97995-j8k6b                      1/1     Running   0          2m23s
-kagent               kgateway-agent-5459ddf778-jnbgb                 1/1     Running   0          76s
-kagent               observability-agent-58ccf99c58-zrgwn            1/1     Running   0          77s
-kagent               promql-agent-69d58fbf9d-gcr2w                   1/1     Running   0          75s
-kube-system          coredns-674b8bbfcf-7gthr                        1/1     Running   0          2m38s
-kube-system          etcd-minikube                                   1/1     Running   0          2m44s
-kube-system          kube-apiserver-minikube                         1/1     Running   0          2m44s
-kube-system          kube-controller-manager-minikube                1/1     Running   0          2m44s
-kube-system          kube-proxy-56wcp                                1/1     Running   0          2m38s
-kube-system          kube-scheduler-minikube                         1/1     Running   0          2m44s
-kube-system          storage-provisioner                             1/1     Running   0          2m43s
-mcp-failover-clean   web-blue-688df968f6-lfl5j                       1/1     Running   0          2m34s
-mcp-failover-clean   web-blue-688df968f6-whlxz                       1/1     Running   0          2m34s
+NAMESPACE            NAME                                                     READY   STATUS    RESTARTS   AGE
+kagent               argo-rollouts-conversion-agent-74b9485bbb-25vvn          1/1     Running   0          2m7s
+kagent               cilium-debug-agent-756fc845f-stt8h                       1/1     Running   0          2m7s
+kagent               cilium-manager-agent-99ccd97b9-p96dv                     1/1     Running   0          2m7s
+kagent               cilium-policy-agent-59499bd9cb-k5rvp                     1/1     Running   0          2m7s
+kagent               failover-agent-795b7d458c-9z6lw                          1/1     Running   0          100s
+kagent               helm-agent-65b6857f74-bnvnt                              1/1     Running   0          2m8s
+kagent               istio-agent-8d57d6cf4-f9v98                              1/1     Running   0          2m8s
+kagent               k8s-agent-8cbb4446f-k698d                                1/1     Running   0          2m7s
+kagent               kagent-controller-548bb77cb8-24gtd                       2/2     Running   0          3m7s
+kagent               kagent-querydoc-66bd88f7b-w7287                          1/1     Running   0          3m7s
+kagent               kagent-tools-7dbf78b678-tbpw7                            1/1     Running   0          3m7s
+kagent               kagent-ui-8648c97995-5t4c8                               1/1     Running   0          3m7s
+kagent               kgateway-agent-7446bc9584-2gtf9                          1/1     Running   0          2m7s
+kagent               observability-agent-6fdf559756-q7mhs                     1/1     Running   0          2m7s
+kagent               promql-agent-b684559b8-lbg8g                             1/1     Running   0          2m7s
+kube-system          coredns-674b8bbfcf-sbgsq                                 1/1     Running   0          3m40s
+kube-system          etcd-minikube                                            1/1     Running   0          3m46s
+kube-system          kube-apiserver-minikube                                  1/1     Running   0          3m46s
+kube-system          kube-controller-manager-minikube                         1/1     Running   0          3m46s
+kube-system          kube-proxy-8rt5f                                         1/1     Running   0          3m40s
+kube-system          kube-scheduler-minikube                                  1/1     Running   0          3m46s
+kube-system          storage-provisioner                                      1/1     Running   0          3m45s
+mcp-failover-clean   web-blue-688df968f6-tq6wj                                1/1     Running   0          3m36s
+mcp-failover-clean   web-blue-688df968f6-zk7f6                                1/1     Running   0          3m36s
+monitoring           alertmanager-prom-stack-kube-prometheus-alertmanager-0   2/2     Running   0          3m14s
+monitoring           prom-stack-grafana-8669cdf884-frk2d                      3/3     Running   0          3m22s
+monitoring           prom-stack-kube-prometheus-operator-8cfd54547-t4v55      1/1     Running   0          3m22s
+monitoring           prom-stack-kube-state-metrics-59bccf994d-f26qd           1/1     Running   0          3m22s
+monitoring           prom-stack-prometheus-node-exporter-k7bm2                1/1     Running   0          3m22s
+monitoring           prometheus-prom-stack-kube-prometheus-prometheus-0       2/2     Running   0          3m14s
 ```
 
 In my old demo, the intelligence was just thresholds in YAML. Now it lives in this agent, which can reason about context, trends, and even cost implications.
@@ -196,7 +201,7 @@ This is **guided intelligence**. The agent doesn't blindly act; it collaborates 
 
 In my HPA demo, I stressed the blue deployment and waited for the autoscaler to add pods. Now, I simulate degradation but instead of just watching metrics, I ask the agent what I should do.
 
-I run this patch against my resilience-demo app to simulate slow requests:
+First, I inject latency into the blue deployment:
 
 ```bash
 kubectl patch deployment web-blue -n mcp-failover-clean -p '{
@@ -206,7 +211,7 @@ kubectl patch deployment web-blue -n mcp-failover-clean -p '{
   }]}}}}'
 ```
 
-Then I ask in the UI:
+Then in the **kagent UI** I type:
 
 ```
 Our blue deployment is degraded. Please scale up the green deployment to 2 replicas, 
@@ -220,13 +225,35 @@ Blue is experiencing high latency. I will scale green to 2 replicas,
 verify they are ready, and then switch traffic. Do you want me to proceed?
 ```
 
-I respond `Yes`, and the agent executes the sequence:
+I confirm with `Yes`, and the agent executes:
 
 1. **Scale up green** to 2 replicas
 2. **Wait until green is ready**
-3. **Switch the service selector** from blue → green
+3. **Switch the Service selector** from blue → green
 
-Here, the difference is clear: the agent doesn’t just flip traffic blindly — it coordinates a safe failover. My old watcher simply switched traffic on a binary health check, but the agent reasons about readiness and avoids downtime.
+---
+
+### Demonstrating the Failover in Real Time
+
+To make the failover visible to the audience, I open two things side by side:
+
+1. **Browser app page** → shows blue background (active deployment).
+2. **Terminal watcher** → shows the live service selector:
+
+```bash
+kubectl get svc web -n mcp-failover-clean \
+  -o jsonpath='{.spec.selector.version}' -w
+```
+
+This prints:
+
+```
+blue
+green
+```
+
+At the exact moment the agent performs the failover, the terminal flips from `blue` → `green` and the browser page switches from blue → green.
+This gives a **clear, undeniable demonstration** that the **agent is in control** of traffic shifting.
 
 ---
 
