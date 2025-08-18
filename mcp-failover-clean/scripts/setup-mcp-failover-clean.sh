@@ -112,11 +112,11 @@ main() {
     
     echo "[+] Installing kagent CRDs"
     helm install kagent-crds oci://ghcr.io/kagent-dev/kagent/helm/kagent-crds \
-    --namespace kagent --create-namespace --wait
+    --version 0.5.5 --namespace kagent --create-namespace --wait
     
     echo "[+] Installing KMCP CRDs"
     helm install kmcp-crds oci://ghcr.io/kagent-dev/kmcp/helm/kmcp-crds \
-    --namespace kmcp-system --create-namespace --wait
+    --version 0.1.5 --namespace kmcp-system --create-namespace --wait
     
     echo "[+] Creating OpenAI secret securely"
     kubectl delete secret openai-secret -n kagent --ignore-not-found
@@ -125,7 +125,7 @@ main() {
     
     echo "[+] Installing Kagent core components"
     helm install kagent oci://ghcr.io/kagent-dev/kagent/helm/kagent \
-    --namespace kagent \
+    --version 0.5.5 --namespace kagent \
     --set providers.openAI.apiKey="${OPENAI_API_KEY}" \
     --wait --timeout=10m
     
@@ -166,39 +166,16 @@ main() {
     
     kubectl apply -f ./mcp-failover-clean/k8s/failover-agent-config.yaml
     
-    echo "[+] Waiting for agent pods to start..."
-    sleep 30
-    
-    echo "[+] Checking final status"
-    kubectl -n kagent get pods
-    kubectl -n mcp-failover-clean get pods
-    
     echo ""
     echo "Installation completed successfully!"
     echo ""
-    echo "RESOURCE USAGE:"
-    kubectl top nodes 2>/dev/null || echo "   (Metrics server not available)"
-    
-        echo ""
-    echo "YOUR KAGENT INSTALLATION IS READY!"
+    echo "NEXT STEPS:"
+    echo "1. Wait for agent pods: kubectl -n kagent get pods"
+    echo "2. Get app URL: minikube service web -n mcp-failover-clean --url"
+    echo "3. Open Kagent dashboard: ./bin/kubectl-kagent dashboard"
     echo ""
-    echo "   Blue/Green Demo Environment:"
-    echo "   • Blue deployment: 2 replicas running"  
-    echo "   • Green deployment: 0 replicas (standby)"
-    echo "   • Service: Available via NodePort"
-    echo ""
-
-    echo "Service URL:"
-    APP_URL=$(minikube service web -n mcp-failover-clean --url)
-    echo "$APP_URL"
-    echo ""
-
-    # Automatically open the App in the default browser
-    open "$APP_URL" 2>/dev/null || xdg-open "$APP_URL" || echo "Please open manually: $APP_URL"
-
-    # Automatically open the Kagent dashboard in a new tab
-    echo "[+] Opening Kagent Dashboard..."
-    kagent dashboard &
+    echo "Blue deployment: 2 replicas (active)"
+    echo "Green deployment: 0 replicas (standby)"
 }
 
 main "$@"

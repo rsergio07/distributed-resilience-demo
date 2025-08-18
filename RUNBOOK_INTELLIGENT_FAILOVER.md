@@ -57,25 +57,104 @@ When this finishes, I confirm that the blue deployment has 2 replicas running, g
 
 ## 4. Meet My AI Agent
 
-I verify that the agent is ready:
+Let's verify that the agent is ready:
 
 ```bash
-kubectl wait --for=condition=Ready pod -l kagent=failover-agent -n kagent --timeout=90s
-kubectl get agents -n kagent
+kubectl get pods -A
 ```
 
 The result shows:
 
 ```
-NAME             MODELCONFIG   READY   ACCEPTED
-failover-agent   openai-gpt4   True    True
+NAME                                             READY   STATUS    RESTARTS   AGE
+NAMESPACE            NAME                                            READY   STATUS    RESTARTS   AGE
+kagent               argo-rollouts-conversion-agent-b7b5898d-rllkr   1/1     Running   0          76s
+kagent               cilium-debug-agent-67c57f5d89-2ffnz             1/1     Running   0          76s
+kagent               cilium-manager-agent-647788775f-jg9h7           1/1     Running   0          76s
+kagent               cilium-policy-agent-6f79d95f4b-qtc2n            1/1     Running   0          75s
+kagent               failover-agent-6b5b486985-tzv65                 1/1     Running   0          68s
+kagent               helm-agent-6c98ffd768-ttjfl                     1/1     Running   0          75s
+kagent               istio-agent-789d7645b-5r96w                     1/1     Running   0          76s
+kagent               k8s-agent-7644f8f475-h45qb                      1/1     Running   0          76s
+kagent               kagent-controller-548bb77cb8-j729x              2/2     Running   0          2m23s
+kagent               kagent-querydoc-66bd88f7b-f47w7                 1/1     Running   0          2m23s
+kagent               kagent-tools-7dbf78b678-hrtgs                   1/1     Running   0          2m23s
+kagent               kagent-ui-8648c97995-j8k6b                      1/1     Running   0          2m23s
+kagent               kgateway-agent-5459ddf778-jnbgb                 1/1     Running   0          76s
+kagent               observability-agent-58ccf99c58-zrgwn            1/1     Running   0          77s
+kagent               promql-agent-69d58fbf9d-gcr2w                   1/1     Running   0          75s
+kube-system          coredns-674b8bbfcf-7gthr                        1/1     Running   0          2m38s
+kube-system          etcd-minikube                                   1/1     Running   0          2m44s
+kube-system          kube-apiserver-minikube                         1/1     Running   0          2m44s
+kube-system          kube-controller-manager-minikube                1/1     Running   0          2m44s
+kube-system          kube-proxy-56wcp                                1/1     Running   0          2m38s
+kube-system          kube-scheduler-minikube                         1/1     Running   0          2m44s
+kube-system          storage-provisioner                             1/1     Running   0          2m43s
+mcp-failover-clean   web-blue-688df968f6-lfl5j                       1/1     Running   0          2m34s
+mcp-failover-clean   web-blue-688df968f6-whlxz                       1/1     Running   0          2m34s
 ```
 
 In my old demo, the intelligence was just thresholds in YAML. Now it lives in this agent, which can reason about context, trends, and even cost implications.
 
 ---
 
-## 5. Ask Basic Questions Through the UI
+## 5. Access Demo Interfaces
+
+With the intelligent infrastructure deployed, I need access to two key interfaces: the blue/green application and the kagent dashboard. Unlike my traditional demo where I only accessed the app directly, here I have both the workload and the AI management layer.
+
+First, I get the application URL:
+
+```bash
+minikube service web -n mcp-failover-clean --url
+```
+
+This exposes the resilience-demo application through Minikube's NodePort. The URL will show the current active deployment (blue with 2 replicas) and provide the interface for testing failover scenarios.
+
+Next, I open the kagent dashboard:
+
+```bash
+./bin/kubectl-kagent dashboard
+```
+
+This launches the AI agent interface at `http://localhost:8080`. The dashboard provides a conversational UI where I can interact with the failover agent, ask questions about the cluster state, and delegate operational decisions. This is fundamentally different from the traditional demo where all interactions were through CLI commands and YAML files.
+
+With both interfaces available, I can now demonstrate the contrast between reactive automation and intelligent operations management.
+
+---
+
+## 5a. (Optional) Legacy Watcher for Comparison
+
+To contrast my intelligent failover demo with the traditional one, I also keep a watcher script around.
+This script is **not required** when using the AI agent — the agent already reasons about readiness, scaling, and failover.
+But it’s useful to run them side-by-side so I can compare their behavior.
+
+I created a copy of the traditional watcher script, adjusted for the `mcp-failover-clean` namespace:
+
+```bash
+./mcp-failover-clean/scripts/failover-watcher-intelligent.sh
+```
+
+This watcher continuously:
+
+* Checks if blue or green pods are ready
+* Switches the service selector accordingly
+* Logs its decisions every few seconds
+
+Example output:
+
+```
+[watcher-intelligent] blue_ready=2 green_ready=0 svc=blue
+[watcher-intelligent] blue_ready=1 green_ready=2 svc=green
+```
+
+In the intelligent demo, I rely on the agent to manage failovers.
+But by keeping this watcher running in a second terminal, I can **see the contrast in real time**:
+– the watcher flips traffic reactively,
+– the agent makes **coordinated, reasoned decisions**.
+
+---
+
+## 6. Ask Basic Questions Through the UI
 
 Instead of running raw `kubectl` queries, I now use the **kagent UI**.
 
@@ -95,7 +174,7 @@ This is my first big contrast. In the HPA demo, I had to interpret raw CLI outpu
 
 ---
 
-## 6. Delegate Monitoring Setup
+## 7. Delegate Monitoring Setup
 
 Previously, monitoring was all on me. I had to watch CPU graphs and wait for the HPA to react. Now I can delegate that responsibility to the agent.
 
@@ -109,11 +188,11 @@ The agent replies that Prometheus and Alertmanager are needed, and asks if I wan
 
 If something is missing (like Prometheus Operator CRDs), the agent detects it, explains why it failed, and proposes a fix. I approve again.
 
-This is **guided intelligence**. The agent doesn’t blindly act; it collaborates with me and explains its reasoning.
+This is **guided intelligence**. The agent doesn't blindly act; it collaborates with me and explains its reasoning.
 
 ---
 
-## 7. Simulate Degradation and Ask for a Decision
+## 8. Simulate Degradation and Ask for a Decision
 
 In my HPA demo, I stressed the blue deployment and waited for the autoscaler to add pods. Now, I simulate degradation but instead of just watching metrics, I ask the agent what I should do.
 
@@ -130,24 +209,30 @@ kubectl patch deployment web-blue -n mcp-failover-clean -p '{
 Then I ask in the UI:
 
 ```
-Our blue deployment is degraded. Should I failover to green?
+Our blue deployment is degraded. Please scale up the green deployment to 2 replicas, 
+wait until it is ready, and then failover the service to green.
 ```
 
 The agent replies with reasoning:
 
 ```
-Blue is experiencing high latency. Failing over to green is the optimal decision to maintain availability and prevent user impact. Do you want me to proceed?
+Blue is experiencing high latency. I will scale green to 2 replicas, 
+verify they are ready, and then switch traffic. Do you want me to proceed?
 ```
 
-I respond `Yes`, and the agent executes the failover.
+I respond `Yes`, and the agent executes the sequence:
 
-Here, the difference is clear: the agent justifies its recommendation. My old watcher simply flipped traffic on a binary health check.
+1. **Scale up green** to 2 replicas
+2. **Wait until green is ready**
+3. **Switch the service selector** from blue → green
+
+Here, the difference is clear: the agent doesn’t just flip traffic blindly — it coordinates a safe failover. My old watcher simply switched traffic on a binary health check, but the agent reasons about readiness and avoids downtime.
 
 ---
 
-## 8. Grant Full Autonomy
+## 9. Grant Full Autonomy
 
-Once I’ve seen the agent make good decisions, I take the next step: I trust it with autonomy.
+Once I've seen the agent make good decisions, I take the next step: I trust it with autonomy.
 
 In the UI I type:
 
@@ -159,7 +244,7 @@ In the HPA demo, there was no way to do this—I had to encode thresholds up fro
 
 ---
 
-## 9. Trigger a Crash and Watch Self-Healing
+## 10. Trigger a Crash and Watch Self-Healing
 
 To prove the difference, I simulate a total crash of the blue deployment.
 
@@ -183,7 +268,7 @@ This is what true self-healing looks like.
 
 ---
 
-## 10. Summarize the Differences
+## 11. Summarize the Differences
 
 At this stage I step back and compare the two approaches side by side:
 
@@ -197,7 +282,7 @@ At this stage I step back and compare the two approaches side by side:
 
 ---
 
-## 11. Cleanup
+## 12. Cleanup
 
 Once I finish the demo, I reset the environment:
 
