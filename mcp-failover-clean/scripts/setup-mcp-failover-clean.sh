@@ -82,11 +82,33 @@ main() {
     kubectl delete namespace mcp-failover-clean --ignore-not-found
     kubectl create namespace mcp-failover-clean
     
+    echo "[+] Ensuring resilience-demo image is available offline"
+    IMAGE_TAG="resilience-demo:1.1"
+    APP_TAR="images/resilience-demo_1.1.tar"
+
+    if docker image inspect "${IMAGE_TAG}" >/dev/null 2>&1; then
+        echo "[✓] Found ${IMAGE_TAG} in local Docker cache"
+    elif [[ -f "${APP_TAR}" ]]; then
+        echo "[+] Loading app image from TAR: ${APP_TAR}"
+        docker load -i "${APP_TAR}"
+    else
+        echo "[!] WARNING: App image ${IMAGE_TAG} not found and ${APP_TAR} missing"
+        echo "    The demo will attempt to pull the image from a registry (requires internet)"
+    fi
+
+    echo "[+] Preloading app image into Minikube"
+    minikube image load "${IMAGE_TAG}" || true
+    
     echo "[+] Deploying demo workloads (blue/green)"
     kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/deployment-blue.yaml
     kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/deployment-green.yaml
     kubectl apply -n mcp-failover-clean -f ./mcp-failover-clean/k8s/service.yaml
-    
+
+    echo "[setup] Installing Prometheus stack via Helm..."
+    helm install prom-stack prometheus-community/kube-prometheus-stack \
+    --namespace monitoring --create-namespace \
+    -f ./mcp-failover-clean/k8s/monitoring/values.yaml
+
     echo "[+] Installing kagent CLI (user mode)"
     mkdir -p ./bin
     curl -sL https://cr.kagent.dev/v0.5.5/kagent-darwin-arm64 -o ./bin/kubectl-kagent
@@ -95,11 +117,11 @@ main() {
     
     echo "[+] Installing kagent CRDs"
     helm install kagent-crds oci://ghcr.io/kagent-dev/kagent/helm/kagent-crds \
-    --namespace kagent --create-namespace --wait
+    --version 0.5.5 --namespace kagent --create-namespace --wait
     
     echo "[+] Installing KMCP CRDs"
     helm install kmcp-crds oci://ghcr.io/kagent-dev/kmcp/helm/kmcp-crds \
-    --namespace kmcp-system --create-namespace --wait
+    --version 0.1.5 --namespace kmcp-system --create-namespace --wait
     
     echo "[+] Creating OpenAI secret securely"
     kubectl delete secret openai-secret -n kagent --ignore-not-found
@@ -108,7 +130,7 @@ main() {
     
     echo "[+] Installing Kagent core components"
     helm install kagent oci://ghcr.io/kagent-dev/kagent/helm/kagent \
-    --namespace kagent \
+    --version 0.5.5 --namespace kagent \
     --set providers.openAI.apiKey="${OPENAI_API_KEY}" \
     --wait --timeout=10m
     
@@ -149,24 +171,16 @@ main() {
     
     kubectl apply -f ./mcp-failover-clean/k8s/failover-agent-config.yaml
     
-    echo "[+] Waiting for agent pods to start..."
-    sleep 30
-    
-    echo "[+] Checking final status"
-    kubectl -n kagent get pods
-    kubectl -n mcp-failover-clean get pods
-    
     echo ""
     echo "Installation completed successfully!"
     echo ""
-    echo "RESOURCE USAGE:"
-    kubectl top nodes 2>/dev/null || echo "   (Metrics server not available)"
-    
+    echo "NEXT STEPS:"
+    echo "1. Wait for agent pods: kubectl -n kagent get pods"
+    echo "2. Get app URL: minikube service web -n mcp-failover-clean --url"
+    echo "3. Open Kagent dashboard: ./bin/kubectl-kagent dashboard"
     echo ""
-    echo "YOUR KAGENT INSTALLATION IS READY!"
-    echo ""
-    echo "   Blue/Green Demo Environment:"
-    echo "   • Blue deployment: 2 replicas running"  
-    echo "   • Green deployment: 0 replicas (standby)"
-    echo "   • Service: Available via NodePort"
-    echo ""
+    echo "Blue deployment: 2 replicas (active)"
+    echo "Green deployment: 0 replicas (standby)"
+}
+
+main "$@"
