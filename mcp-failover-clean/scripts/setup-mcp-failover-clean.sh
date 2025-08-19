@@ -170,6 +170,16 @@ main() {
     fi
     
     kubectl apply -f ./mcp-failover-clean/k8s/failover-agent-config.yaml
+
+    echo "[+] Deploying autonomous failover controller"
+    kubectl apply -f ./mcp-failover-clean/k8s/failover-controller.yaml
+
+    # Wait for the controller to be ready
+    wait_for_deployment failover-controller mcp-failover-clean 120
+
+    echo "[+] Verifying failover controller is monitoring"
+    sleep 5
+    kubectl logs deployment/failover-controller -n mcp-failover-clean --tail=10
     
     echo ""
     echo "Installation completed successfully!"
