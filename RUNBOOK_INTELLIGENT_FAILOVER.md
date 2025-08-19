@@ -117,8 +117,16 @@ This exposes the resilience-demo application through Minikube's NodePort. The UR
 
 Next, I open the kagent dashboard:
 
+1. Forward the UI service port:
+
 ```bash
-./bin/kubectl-kagent dashboard
+kubectl -n kagent port-forward service/kagent-ui 8080:80
+```
+
+2. Open your browser and visit:
+
+```bash
+http://localhost:8080
 ```
 
 This launches the AI agent interface at `http://localhost:8080`. The dashboard provides a conversational UI where I can interact with the failover agent, ask questions about the cluster state, and delegate operational decisions. This is fundamentally different from the traditional demo where all interactions were through CLI commands and YAML files.
