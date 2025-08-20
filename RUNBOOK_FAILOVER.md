@@ -253,7 +253,132 @@ You'll see the green version of the app serving traffic while blue recovers.
 
 ---
 
-## Step 8 – Explore the Cost Implications of Resilience
+## Step 8 – Investigate the Issue
+
+When a system scales up or fails over, it is essential to understand *why* it happened. In production, Site Reliability Engineers (SREs) combine multiple tools to investigate incidents. Here we will use three approaches:
+
+1. Kubernetes CLI events for a timeline of what happened.
+2. Prometheus for raw metrics that explain why it happened.
+3. Grafana for a visual timeline that correlates load, scaling, and failover events.
+
+---
+
+### 1. CLI-Based Investigation
+
+Start with cluster events to view pod lifecycle activity. This reveals when pods were created, terminated, or restarted.
+
+```bash
+kubectl get events -n distributed-resilience --sort-by=.lastTimestamp
+```
+
+This provides a chronological list of:
+
+* Pods being scheduled by the HPA during a scaling event.
+* Pods being terminated due to simulated failures.
+* Recovery actions as deployments return to a healthy state.
+
+This confirms *what happened* in the cluster but does not show the resource usage that triggered it.
+
+---
+
+### 2. Open Prometheus
+
+Prometheus was deployed as part of this demo. To access it, create a local port-forward:
+
+```bash
+kubectl -n distributed-resilience port-forward svc/prometheus 9090:9090
+```
+
+Open your browser at:
+[http://localhost:9090](http://localhost:9090)
+
+From the **Graph** tab, run the following queries:
+
+* **Total CPU usage per pod**
+
+  ```promql
+  sum(rate(container_cpu_usage_seconds_total{namespace="distributed-resilience"}[5m])) by (pod)
+  ```
+
+  This shows CPU spikes during the load test that triggered HPA scaling.
+
+* **Memory usage per pod**
+
+  ```promql
+  sum(container_memory_usage_bytes{namespace="distributed-resilience"}) by (pod)
+  ```
+
+  This shows memory usage trends, highlighting whether failures may have been caused by memory pressure.
+
+---
+
+### 3. Open Grafana
+
+Grafana offers a visual interface for Prometheus data. Port-forward the Grafana service:
+
+```bash
+kubectl -n distributed-resilience port-forward svc/grafana 3000:3000
+```
+
+Open your browser at:
+[http://localhost:3000](http://localhost:3000)
+
+Retrieve the Grafana admin password:
+
+```bash
+kubectl --namespace monitoring get secrets prom-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+```
+
+Log in with:
+
+* Username: `admin`
+* Password: (output from the command above)
+
+Once inside Grafana:
+
+* Navigate to **Dashboards**.
+* Open the **Resilience Demo Dashboard** (auto-provisioned).
+* Observe panels showing CPU usage, memory usage, and HPA scaling activity over time.
+
+These visualizations allow you to correlate traffic spikes, autoscaling decisions, and failover events.
+
+---
+
+### Typical Findings
+
+When running this investigation as part of the demo, you should expect to see:
+
+* **From kubectl events**:
+
+  * New pods scheduled after the load test began.
+  * Termination of pods from the simulated blue outage.
+  * Recovery events as blue pods restart after the outage period.
+
+* **From Prometheus**:
+
+  * A sharp CPU usage increase on the blue deployment during the load test.
+  * Corresponding memory usage growth, although typically less dramatic.
+  * A drop to zero CPU for blue pods during the simulated outage, confirming service loss.
+
+* **From Grafana**:
+
+  * A clear spike in CPU followed by an HPA scaling event (pods increasing from 1 to 5).
+  * A sudden drop in blue pod metrics during the outage, followed by continued activity on green pods.
+  * Visual confirmation that traffic was successfully rerouted to green, with service continuity maintained.
+
+---
+
+### Summary
+
+* **kubectl events**: Show the sequence of scaling, failures, and recovery.
+* **Prometheus**: Provides metric-level evidence explaining why scaling or failover occurred.
+* **Grafana**: Correlates the entire incident visually, making it clear how the system responded.
+
+This workflow is the foundation of real-world incident investigation: establishing what happened, why it happened, and how the system reacted.
+
+---
+
+## Step 9 – Explore the Cost Implications of Resilience
 
 > **What I'm doing**: "We've seen how resilience works in practice. Now, let's look at the financial side. How do these patterns impact our cloud bill? Our `calc_costs.py` script helps us understand the trade-offs."
 
